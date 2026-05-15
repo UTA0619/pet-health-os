@@ -1,0 +1,39 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Home, PlusSquare, Camera, Settings } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+const navItems = [
+  { href: "/dashboard", icon: Home, label: "ホーム" },
+  { href: "/log", icon: PlusSquare, label: "記録" },
+  { href: "/camera", icon: Camera, label: "スキャン" },
+  { href: "/settings", icon: Settings, label: "設定" },
+];
+
+export function AppNav() {
+  const pathname = usePathname();
+  return (
+    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-zinc-200 safe-area-inset-bottom">
+      <div className="flex items-center justify-around h-16 max-w-lg mx-auto px-4">
+        {navItems.map(({ href, icon: Icon, label }) => {
+          const active = pathname === href || pathname.startsWith(href + "/");
+          return (
+            <Link
+              key={href}
+              href={href}
+              className={cn(
+                "flex flex-col items-center gap-1 min-w-[60px] py-2 rounded-xl transition-colors",
+                active ? "text-emerald-600" : "text-zinc-400 hover:text-zinc-600"
+              )}
+            >
+              <Icon className="h-6 w-6" strokeWidth={active ? 2.5 : 2} />
+              <span className="text-[10px] font-medium">{label}</span>
+            </Link>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
