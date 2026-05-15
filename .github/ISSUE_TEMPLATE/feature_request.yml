@@ -1,0 +1,83 @@
+name: Feature Request
+description: Propose a new feature or improvement
+title: "[FEAT] "
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Great features start with a clear problem statement.
+        Describe the **user problem**, not the solution — we'll design together.
+
+  - type: textarea
+    id: user_story
+    attributes:
+      label: User story
+      description: "As a [type of user], I want to [do something], so that [outcome/benefit]."
+      placeholder: "As a dog owner, I want to compare my dog's weekly health trend to healthy dogs of the same breed, so that I can understand if my dog is doing well relative to peers."
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / opportunity
+      description: What pain point does this address? What business opportunity does it unlock?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: domain
+    attributes:
+      label: Product domain
+      options:
+        - AI / Health Intelligence
+        - Camera Scanner
+        - Health Logging
+        - Dashboard & Scores
+        - Alerts & Notifications
+        - Onboarding
+        - Subscription / Monetization
+        - Mobile Experience
+        - Vet / Professional Features
+        - Analytics & Insights
+        - Infrastructure
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed_solution
+    attributes:
+      label: Proposed solution
+      description: If you have an idea for how to solve it, describe it here. Include mockups if possible.
+
+  - type: textarea
+    id: ai_implications
+    attributes:
+      label: AI implications
+      description: Does this feature require new AI capabilities, prompt changes, or model updates?
+
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance criteria
+      description: How will we know this feature is done and working correctly?
+      value: |
+        - [ ]
+        - [ ]
+        - [ ]
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Suggested priority
+      options:
+        - "P0: Critical — blocking launch"
+        - "P1: High — important for core value"
+        - "P2: Medium — improves experience"
+        - "P3: Low — nice to have"
+    validations:
+      required: true

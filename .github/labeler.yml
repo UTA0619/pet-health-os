@@ -1,0 +1,43 @@
+frontend:
+  - changed-files:
+    - any-glob-to-any-file: ["apps/web/**", "packages/ui/**"]
+
+mobile:
+  - changed-files:
+    - any-glob-to-any-file: ["apps/mobile/**"]
+
+ai:
+  - changed-files:
+    - any-glob-to-any-file: ["packages/ai/**", "supabase/functions/analyze-pet-image/**", "supabase/functions/generate-health-score/**", "supabase/functions/run-anomaly-detection/**"]
+
+backend:
+  - changed-files:
+    - any-glob-to-any-file: ["apps/web/app/api/**", "supabase/functions/**"]
+
+database:
+  - changed-files:
+    - any-glob-to-any-file: ["supabase/migrations/**", "packages/database/**"]
+
+infra:
+  - changed-files:
+    - any-glob-to-any-file: [".github/workflows/**", "infra/**", "vercel.json", "turbo.json"]
+
+auth:
+  - changed-files:
+    - any-glob-to-any-file: ["apps/web/app/api/auth/**", "apps/web/middleware.ts"]
+
+payments:
+  - changed-files:
+    - any-glob-to-any-file: ["apps/web/app/api/stripe/**", "apps/web/app/api/webhooks/**"]
+
+camera:
+  - changed-files:
+    - any-glob-to-any-file: ["supabase/functions/analyze-pet-image/**", "apps/web/app/(app)/camera/**", "apps/mobile/app/camera/**"]
+
+docs:
+  - changed-files:
+    - any-glob-to-any-file: ["docs/**", "*.md", "CONTRIBUTING.md", "SECURITY.md"]
+
+security:
+  - changed-files:
+    - any-glob-to-any-file: ["SECURITY.md", "docs/compliance/**", ".github/workflows/security-scan.yml"]

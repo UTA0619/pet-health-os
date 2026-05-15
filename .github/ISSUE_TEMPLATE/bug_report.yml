@@ -1,0 +1,92 @@
+name: Bug Report
+description: Something is broken — report it here
+title: "[BUG] "
+labels: ["bug", "needs-triage"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Before filing:** check if this is already reported in open issues.
+        For security vulnerabilities, email `security@pethealthos.com` — do NOT file a public issue.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Clear description of the bug. What did you expect vs. what actually happened?
+      placeholder: "Expected: health score updates after submitting a log. Actual: spinner shows forever, no score appears."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Exact steps to trigger the bug
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Affected component
+      options:
+        - Health Score (AI scoring)
+        - Camera Scanner (image analysis)
+        - Anomaly Detection / Alerts
+        - Onboarding flow
+        - Health log submission
+        - Dashboard
+        - Notifications
+        - Subscription / Payments
+        - Auth (login/signup)
+        - Pet profile management
+        - Settings
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - "Critical — data loss, security issue, complete feature broken"
+        - "Major — core feature broken but workaround exists"
+        - "Minor — degraded experience"
+        - "Cosmetic — visual only"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      multiple: true
+      options:
+        - Web (Chrome)
+        - Web (Safari)
+        - Web (Firefox)
+        - iOS (App)
+        - Android (App)
+        - All platforms
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / Screenshots
+      description: Paste relevant error messages, console logs, or screenshots
+      render: shell
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Pet species, account type (Free/Pro), browser version, app version, etc.

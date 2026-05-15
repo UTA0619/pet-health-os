@@ -1,0 +1,58 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/New_York"
+    open-pull-requests-limit: 10
+    groups:
+      supabase:
+        patterns:
+          - "@supabase/*"
+          - "supabase"
+      openai:
+        patterns:
+          - "openai"
+          - "@ai-sdk/*"
+      stripe:
+        patterns:
+          - "@stripe/*"
+          - "stripe"
+      nextjs:
+        patterns:
+          - "next"
+          - "@next/*"
+      expo:
+        patterns:
+          - "expo"
+          - "expo-*"
+          - "@expo/*"
+      testing:
+        patterns:
+          - "vitest"
+          - "@vitest/*"
+          - "playwright"
+          - "@playwright/*"
+      turbo:
+        patterns:
+          - "turbo"
+          - "@turbo/*"
+    labels:
+      - "chore"
+      - "dependencies"
+    reviewers:
+      - "moji-inc/cto"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "chore"
+      - "infra"
+    reviewers:
+      - "moji-inc/cto"

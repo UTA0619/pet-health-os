@@ -1,0 +1,39 @@
+# Pet Health OS — Code Ownership
+# Format: pattern  @owner1 @owner2
+# Owners are notified and required reviewers for changes to matched paths.
+
+# Default: CTO reviews everything not covered below
+*                                       @moji-inc/cto
+
+# AI system — requires AI lead review
+packages/ai/**                          @moji-inc/ai-lead
+supabase/functions/analyze-pet-image/** @moji-inc/ai-lead @moji-inc/backend-lead
+supabase/functions/generate-health-score/** @moji-inc/ai-lead @moji-inc/backend-lead
+supabase/functions/run-anomaly-detection/** @moji-inc/ai-lead @moji-inc/backend-lead
+supabase/functions/sync-baseline-model/** @moji-inc/ai-lead
+
+# Database — CTO + backend must review all schema changes
+supabase/migrations/**                  @moji-inc/cto @moji-inc/backend-lead
+packages/database/**                    @moji-inc/backend-lead
+
+# Security-sensitive paths — CTO required
+apps/web/app/api/auth/**                @moji-inc/cto
+apps/web/app/api/webhooks/**            @moji-inc/cto
+apps/web/middleware.ts                  @moji-inc/cto
+.github/workflows/**                    @moji-inc/cto
+vercel.json                             @moji-inc/cto
+SECURITY.md                             @moji-inc/cto
+docs/compliance/**                      @moji-inc/cto
+
+# Payments — CTO required
+apps/web/app/api/stripe/**              @moji-inc/cto
+
+# Infrastructure
+infra/**                                @moji-inc/cto
+.github/workflows/**                    @moji-inc/cto
+
+# Shared UI — frontend lead
+packages/ui/**                          @moji-inc/frontend-lead
+
+# Docs — anyone can review
+docs/**                                 @moji-inc/cto

@@ -1,0 +1,92 @@
+name: Epic
+description: Large-scale initiative spanning multiple issues and sprints
+title: "[EPIC] "
+labels: ["epic", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        An **Epic** is a large body of work that delivers a significant business outcome.
+        It breaks down into multiple issues. This template captures the full context.
+
+  - type: textarea
+    id: business_objective
+    attributes:
+      label: Business objective
+      description: What measurable business outcome does this epic deliver?
+      placeholder: "Deliver AI-powered early warning for pet health anomalies, reducing preventable vet emergency visits and driving Pro subscription conversion."
+    validations:
+      required: true
+
+  - type: textarea
+    id: technical_scope
+    attributes:
+      label: Technical scope
+      description: What systems, services, and components are involved?
+    validations:
+      required: true
+
+  - type: textarea
+    id: sub_issues
+    attributes:
+      label: Sub-issues
+      description: List the individual issues that make up this epic (create them separately and reference here)
+      value: |
+        - [ ] #
+        - [ ] #
+        - [ ] #
+    validations:
+      required: true
+
+  - type: textarea
+    id: success_metrics
+    attributes:
+      label: Success metrics
+      description: How will we measure success? Include specific, measurable targets.
+      value: |
+        - Metric 1: Target
+        - Metric 2: Target
+    validations:
+      required: true
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+      description: What must be completed before this epic can start or finish?
+
+  - type: textarea
+    id: risks
+    attributes:
+      label: Risks and mitigations
+      description: What could go wrong? How will we mitigate?
+      value: |
+        | Risk | Likelihood | Mitigation |
+        |---|---|---|
+        | | | |
+
+  - type: dropdown
+    id: milestone
+    attributes:
+      label: Target milestone
+      options:
+        - "M0: Foundation (Days 1–3)"
+        - "M1: MVP Week 1 (Days 1–7)"
+        - "M2: MVP Week 2 (Days 8–14)"
+        - "M3: Closed Beta"
+        - "M4: Public Launch"
+        - "M5: AI Optimization"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - "P0: Critical"
+        - "P1: High"
+        - "P2: Medium"
+        - "P3: Low"
+    validations:
+      required: true
