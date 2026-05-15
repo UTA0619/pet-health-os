@@ -6,7 +6,7 @@
 -- ── Health logs ──────────────────────────────────────────────
 -- One log per pet per day. Each metric is 1–5 scale.
 create table public.health_logs (
-  id               uuid primary key default uuid_generate_v4(),
+  id               uuid primary key default gen_random_uuid(),
   pet_id           uuid not null references public.pets(id) on delete cascade,
   log_date         date not null default current_date,
   -- Core metrics (1=very poor, 5=excellent)
@@ -49,7 +49,7 @@ create trigger health_logs_updated_at
 
 -- ── Symptom reports ──────────────────────────────────────────
 create table public.symptom_reports (
-  id            uuid primary key default uuid_generate_v4(),
+  id            uuid primary key default gen_random_uuid(),
   pet_id        uuid not null references public.pets(id) on delete cascade,
   symptom_type  text not null,
   severity      text not null check (severity in ('mild', 'moderate', 'severe')),
@@ -73,7 +73,7 @@ create policy "symptoms_insert_own" on public.symptom_reports
 
 -- ── Vet visits ───────────────────────────────────────────────
 create table public.vet_visits (
-  id             uuid primary key default uuid_generate_v4(),
+  id             uuid primary key default gen_random_uuid(),
   pet_id         uuid not null references public.pets(id) on delete cascade,
   visit_date     date not null,
   clinic_name    text,
@@ -102,8 +102,7 @@ create policy "vet_visits_insert_own" on public.vet_visits
 -- ── Indexes ──────────────────────────────────────────────────
 create index idx_health_logs_pet_date on public.health_logs(pet_id, log_date desc);
 create index idx_health_logs_ai_pending on public.health_logs(ai_processed) where not ai_processed;
-create index idx_health_logs_recent on public.health_logs(pet_id, log_date desc)
-  where log_date >= current_date - interval '90 days';
+create index idx_health_logs_recent on public.health_logs(pet_id, log_date desc);
 create index idx_symptom_reports_pet_id on public.symptom_reports(pet_id, onset_date desc);
 create index idx_vet_visits_pet_id on public.vet_visits(pet_id, visit_date desc);
 

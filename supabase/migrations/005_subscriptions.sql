@@ -5,7 +5,7 @@
 
 -- ── Subscriptions ────────────────────────────────────────────
 create table public.subscriptions (
-  id                     uuid primary key default uuid_generate_v4(),
+  id                     uuid primary key default gen_random_uuid(),
   user_id                uuid not null references public.profiles(id) on delete cascade,
   plan                   text not null default 'free' check (plan in ('free', 'pro', 'premium')),
   status                 text not null default 'active' check (status in ('active', 'trialing', 'past_due', 'cancelled', 'incomplete')),
@@ -63,7 +63,7 @@ create trigger on_profile_created_subscription
 
 -- ── Billing events ───────────────────────────────────────────
 create table public.billing_events (
-  id              uuid primary key default uuid_generate_v4(),
+  id              uuid primary key default gen_random_uuid(),
   user_id         uuid references public.profiles(id) on delete set null,
   event_type      text not null,  -- e.g. 'subscription.created', 'invoice.payment_failed'
   stripe_event_id text unique,
@@ -83,7 +83,7 @@ create policy "billing_events_insert_service" on public.billing_events
 
 -- ── Notification preferences ─────────────────────────────────
 create table public.notification_preferences (
-  id                      uuid primary key default uuid_generate_v4(),
+  id                      uuid primary key default gen_random_uuid(),
   user_id                 uuid not null references public.profiles(id) on delete cascade,
   -- Push notification settings
   push_enabled            boolean not null default false,

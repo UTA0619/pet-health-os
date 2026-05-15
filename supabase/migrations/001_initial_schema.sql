@@ -18,7 +18,7 @@ create table public.profiles (
   subscription_tier   text not null default 'free' check (subscription_tier in ('free', 'pro', 'premium')),
   onboarding_complete boolean not null default false,
   onboarding_step     int not null default 0,
-  referral_code       text unique default encode(gen_random_bytes(6), 'hex'),
+  referral_code       text unique default left(md5(gen_random_uuid()::text), 12),
   referred_by         uuid references public.profiles(id),
   timezone            text not null default 'UTC',
   created_at          timestamptz not null default now(),

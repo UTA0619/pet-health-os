@@ -5,7 +5,7 @@
 
 -- ── Health scores ────────────────────────────────────────────
 create table public.health_scores (
-  id                 uuid primary key default uuid_generate_v4(),
+  id                 uuid primary key default gen_random_uuid(),
   pet_id             uuid not null references public.pets(id) on delete cascade,
   score_date         date not null,
   overall_score      numeric(5,2) not null check (overall_score between 0 and 100),
@@ -37,7 +37,7 @@ create policy "health_scores_update_service" on public.health_scores
 
 -- ── Anomaly detections ───────────────────────────────────────
 create table public.anomaly_detections (
-  id               uuid primary key default uuid_generate_v4(),
+  id               uuid primary key default gen_random_uuid(),
   pet_id           uuid not null references public.pets(id) on delete cascade,
   detected_at      timestamptz not null default now(),
   anomaly_type     text not null,  -- e.g. 'appetite_drop', 'energy_spike', 'stool_abnormal'
@@ -72,7 +72,7 @@ create policy "anomalies_insert_service" on public.anomaly_detections
 
 -- ── Camera analyses ──────────────────────────────────────────
 create table public.camera_analyses (
-  id               uuid primary key default uuid_generate_v4(),
+  id               uuid primary key default gen_random_uuid(),
   pet_id           uuid not null references public.pets(id) on delete cascade,
   image_url        text not null,
   cdn_url          text,
@@ -100,7 +100,7 @@ create policy "camera_insert_service" on public.camera_analyses
 
 -- ── Per-pet baselines ────────────────────────────────────────
 create table public.pet_baselines (
-  id             uuid primary key default uuid_generate_v4(),
+  id             uuid primary key default gen_random_uuid(),
   pet_id         uuid not null references public.pets(id) on delete cascade,
   metric_name    text not null,
   -- One of: activity_level, appetite, stool_quality, coat_condition, eye_clarity, energy_level

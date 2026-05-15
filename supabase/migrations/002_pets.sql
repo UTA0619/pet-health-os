@@ -5,7 +5,7 @@
 
 -- ── Pets ────────────────────────────────────────────────────
 create table public.pets (
-  id            uuid primary key default uuid_generate_v4(),
+  id            uuid primary key default gen_random_uuid(),
   owner_id      uuid not null references public.profiles(id) on delete cascade,
   name          text not null,
   species       text not null check (species in ('dog', 'cat', 'rabbit', 'bird', 'reptile', 'other')),
@@ -40,7 +40,7 @@ create trigger pets_updated_at
 
 -- ── Pet weight history ───────────────────────────────────────
 create table public.pet_weight_history (
-  id         uuid primary key default uuid_generate_v4(),
+  id         uuid primary key default gen_random_uuid(),
   pet_id     uuid not null references public.pets(id) on delete cascade,
   weight_kg  numeric(5,2) not null,
   recorded_at timestamptz not null default now()
@@ -71,7 +71,7 @@ create trigger on_pet_weight_change
 
 -- ── Pet photos ───────────────────────────────────────────────
 create table public.pet_photos (
-  id            uuid primary key default uuid_generate_v4(),
+  id            uuid primary key default gen_random_uuid(),
   pet_id        uuid not null references public.pets(id) on delete cascade,
   storage_url   text not null,
   cdn_url       text,
