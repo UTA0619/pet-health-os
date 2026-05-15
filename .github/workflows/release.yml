@@ -37,7 +37,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Notify Slack
-        uses: slackapi/slack-github-action@v1.26.0
+        uses: slackapi/slack-github-action@v3.0.3
         with:
           payload: |
             {"text": "📦 New release: *${{ github.ref_name }}* — https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}"}

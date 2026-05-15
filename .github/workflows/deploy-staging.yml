@@ -77,7 +77,7 @@ jobs:
 
       - name: Notify Slack on success
         if: success()
-        uses: slackapi/slack-github-action@v1.26.0
+        uses: slackapi/slack-github-action@v3.0.3
         with:
           payload: |
             {"text": "✅ Staging deployed: ${{ env.DEPLOYMENT_URL }} — ${{ github.actor }} @ ${{ github.sha }}"}
@@ -86,7 +86,7 @@ jobs:
 
       - name: Notify Slack on failure
         if: failure()
-        uses: slackapi/slack-github-action@v1.26.0
+        uses: slackapi/slack-github-action@v3.0.3
         with:
           payload: |
             {"text": "🚨 Staging deploy FAILED — ${{ github.actor }} @ ${{ github.sha }} — ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}
