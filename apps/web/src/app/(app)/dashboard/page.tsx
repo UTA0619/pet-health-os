@@ -1,7 +1,14 @@
 import { createServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { computeHealthScore, METRIC_LABELS, DISCLAIMER, type HealthLog } from "@/lib/ai/health-score";
+import {
+  computeHealthScore,
+  computeStreak,
+  computeAchievements,
+  METRIC_LABELS,
+  DISCLAIMER,
+  type HealthLog,
+} from "@/lib/ai/health-score";
 import { scoreToColor } from "@/lib/utils";
 import { TrendingUp, TrendingDown, Minus, AlertTriangle, Camera } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -71,6 +78,20 @@ export default async function DashboardPage() {
     .order("detected_at", { ascending: false })
     .limit(3);
 
+  // All log dates for streak computation (last 365 days)
+  const { data: allLogDates } = await supabase
+    .from("health_logs")
+    .select("log_date")
+    .eq("pet_id", pet.id)
+    .order("log_date", { ascending: false })
+    .limit(365);
+
+  // Camera scan count
+  const { count: cameraScanCount } = await supabase
+    .from("camera_analyses")
+    .select("id", { count: "exact", head: true })
+    .eq("pet_id", pet.id);
+
   const logs: HealthLog[] = (logsRaw ?? []).map((l) => ({
     log_date: l.log_date,
     activity_level: l.activity_level,
@@ -80,6 +101,23 @@ export default async function DashboardPage() {
     eye_clarity: l.eye_clarity,
     energy_level: l.energy_level,
   }));
+
+  // Streak & achievements computation
+  const logDatesList = (allLogDates ?? []).map((l) => l.log_date);
+  const streak = computeStreak(logDatesList);
+  const totalLogs = logDatesList.length;
+
+  const maxScore =
+    logs.length > 0
+      ? Math.max(...logs.map((l) => computeHealthScore([l])?.overall ?? 0))
+      : 0;
+
+  const achievements = computeAchievements({
+    streak,
+    totalLogs,
+    maxScore,
+    hasCameraScan: (cameraScanCount ?? 0) > 0,
+  });
 
   // Only compute score when we have real data
   const score = logs.length > 0 ? computeHealthScore(logs) : null;
@@ -137,6 +175,36 @@ export default async function DashboardPage() {
         </div>
       </div>
 
+      {/* Streak Banner */}
+      {streak > 0 && (
+        <div
+          className={`flex items-center justify-between p-4 rounded-2xl ${
+            streak >= 7
+              ? "bg-gradient-to-r from-orange-400 to-red-500"
+              : streak >= 3
+              ? "bg-gradient-to-r from-orange-300 to-orange-500"
+              : "bg-gradient-to-r from-amber-200 to-orange-300"
+          } text-white shadow-sm`}
+        >
+          <div>
+            <p className="text-sm font-medium opacity-90">連続記録中 🔥</p>
+            <p className="text-3xl font-black">{streak}日</p>
+          </div>
+          <div className="text-right">
+            <p className="text-4xl">{streak >= 30 ? "🏆" : streak >= 7 ? "🔥🔥" : "🔥"}</p>
+            <p className="text-xs opacity-75 mt-1">
+              {streak >= 30
+                ? "伝説的！"
+                : streak >= 7
+                ? "素晴らしい！"
+                : streak >= 3
+                ? "いい調子！"
+                : "継続しよう！"}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Anomaly Alerts */}
       {anomalies && anomalies.length > 0 && (
         <div className="space-y-2">
@@ -166,7 +234,8 @@ export default async function DashboardPage() {
                     ? "重大な異常"
                     : a.severity === "moderate"
                     ? "要注意の変化"
-                    : "軽度の変化"}を検出
+                    : "軽度の変化"}
+                  を検出
                 </p>
                 <p className="text-xs text-zinc-600 mt-0.5">
                   {new Date(a.detected_at).toLocaleDateString("ja-JP")} —
@@ -224,7 +293,9 @@ export default async function DashboardPage() {
                         <span
                           className={score.trendDelta > 0 ? "text-emerald-500" : "text-red-500"}
                         >
-                          {" "}({score.trendDelta > 0 ? "+" : ""}{score.trendDelta.toFixed(1)})
+                          {" "}
+                          ({score.trendDelta > 0 ? "+" : ""}
+                          {score.trendDelta.toFixed(1)})
                         </span>
                       )}
                     </span>
@@ -271,9 +342,7 @@ export default async function DashboardPage() {
             <div className="text-center py-6">
               <div className="text-5xl mb-3">📊</div>
               <p className="font-semibold text-zinc-900">まだデータがありません</p>
-              <p className="text-sm text-zinc-500 mt-1">
-                毎日記録するとAIスコアが計算されます
-              </p>
+              <p className="text-sm text-zinc-500 mt-1">毎日記録するとAIスコアが計算されます</p>
             </div>
           )}
         </CardContent>
@@ -352,6 +421,27 @@ export default async function DashboardPage() {
             })}
           </div>
         )}
+      </div>
+
+      {/* Achievements */}
+      <div>
+        <h2 className="font-semibold text-zinc-900 mb-3">実績バッジ</h2>
+        <div className="grid grid-cols-3 gap-2">
+          {achievements.map((a) => (
+            <div
+              key={a.id}
+              className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl text-center transition-all ${
+                a.earned
+                  ? "bg-gradient-to-b from-amber-50 to-yellow-50 border border-amber-200 shadow-sm"
+                  : "bg-zinc-50 border border-zinc-100 opacity-40"
+              }`}
+            >
+              <span className="text-2xl">{a.emoji}</span>
+              <span className="text-[10px] font-medium leading-tight text-zinc-700">{a.label}</span>
+              {a.earned && <span className="text-[9px] text-amber-600 font-semibold">✓ 達成</span>}
+            </div>
+          ))}
+        </div>
       </div>
 
       <p className="text-xs text-zinc-400 text-center leading-relaxed">{DISCLAIMER}</p>

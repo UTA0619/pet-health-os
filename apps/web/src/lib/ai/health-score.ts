@@ -97,3 +97,59 @@ export const METRIC_LABELS: Record<MetricKey, string> = {
 
 export const DISCLAIMER =
   "※ このスコアはAIによる参考情報です。医療診断ではありません。異常を感じたら獣医師にご相談ください。";
+
+/**
+ * Compute current logging streak from sorted health logs (most recent first)
+ */
+export function computeStreak(logDates: string[]): number {
+  if (!logDates.length) return 0;
+
+  const today = new Date();
+  // Use JST (UTC+9)
+  const todayStr = new Date(today.getTime() + 9 * 60 * 60 * 1000)
+    .toISOString().split("T")[0];
+  const yesterdayDate = new Date(today.getTime() + 9 * 60 * 60 * 1000 - 86400000);
+  const yesterdayStr = yesterdayDate.toISOString().split("T")[0];
+
+  const dateSet = new Set(logDates);
+
+  // Start from today if logged, else from yesterday (still counts as active streak)
+  const startDate: string | null = dateSet.has(todayStr) ? todayStr :
+                                   dateSet.has(yesterdayStr) ? yesterdayStr : null;
+
+  if (!startDate) return 0;
+
+  let checkDate: string = startDate;
+  let streak = 0;
+  while (dateSet.has(checkDate)) {
+    streak++;
+    const d = new Date(checkDate + "T12:00:00Z");
+    d.setUTCDate(d.getUTCDate() - 1);
+    checkDate = d.toISOString().split("T")[0];
+    if (streak > 365) break; // safety cap
+  }
+  return streak;
+}
+
+/**
+ * Compute achievements based on logs and scores
+ */
+export function computeAchievements(params: {
+  streak: number;
+  totalLogs: number;
+  maxScore: number;
+  hasCameraScan: boolean;
+}): { id: string; emoji: string; label: string; earned: boolean }[] {
+  const { streak, totalLogs, maxScore, hasCameraScan } = params;
+  return [
+    { id: "first_log",   emoji: "📝", label: "初めての記録",       earned: totalLogs >= 1 },
+    { id: "streak3",     emoji: "🔥", label: "3日連続記録",        earned: streak >= 3 },
+    { id: "streak7",     emoji: "🔥🔥", label: "1週間連続記録",   earned: streak >= 7 },
+    { id: "streak30",    emoji: "🏆", label: "30日連続記録",       earned: streak >= 30 },
+    { id: "high_score",  emoji: "⭐", label: "スコア80以上達成",   earned: maxScore >= 80 },
+    { id: "perfect",     emoji: "💎", label: "パーフェクトスコア", earned: maxScore >= 98 },
+    { id: "camera",      emoji: "📸", label: "AIカメラ診断",       earned: hasCameraScan },
+    { id: "logs10",      emoji: "📊", label: "10回記録達成",        earned: totalLogs >= 10 },
+    { id: "logs30",      emoji: "🌟", label: "30回記録達成",        earned: totalLogs >= 30 },
+  ];
+}

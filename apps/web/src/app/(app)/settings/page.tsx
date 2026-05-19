@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { useI18n } from "@/lib/i18n";
-import { ExternalLink, MessageCircle, Phone, Bell, Globe, LogOut, ChevronRight } from "lucide-react";
+import { Mail, Phone, Bell, Globe, LogOut, ChevronRight } from "lucide-react";
 
 export default function SettingsPage() {
   const supabase = createBrowserClient();
@@ -23,29 +23,16 @@ export default function SettingsPage() {
   const [upgrading, setUpgrading] = useState(false);
 
   // Notification prefs state
-  const [prefs, setPrefs] = useState<{
-    daily_score_reminder: boolean;
-    anomaly_alerts: boolean;
-    weekly_report: boolean;
-    health_tips: boolean;
-    line_notify_token: string | null;
-    line_enabled: boolean;
-    whatsapp_phone: string | null;
-    whatsapp_enabled: boolean;
-    reminder_hour: number;
-  }>({
+  const [prefs, setPrefs] = useState({
     daily_score_reminder: true,
     anomaly_alerts: true,
     weekly_report: true,
     health_tips: false,
-    line_notify_token: null,
-    line_enabled: false,
-    whatsapp_phone: null,
+    email_enabled: true,
+    whatsapp_phone: "",
     whatsapp_enabled: false,
     reminder_hour: 20,
   });
-  const [lineTokenInput, setLineTokenInput] = useState("");
-  const [testingLine, setTestingLine] = useState(false);
   const [savingPrefs, setSavingPrefs] = useState(false);
 
   useEffect(() => {
@@ -62,7 +49,6 @@ export default function SettingsPage() {
       if (subRes.data) setSubscription(subRes.data);
       if (prefsRes && !prefsRes.error) {
         setPrefs((p) => ({ ...p, ...prefsRes }));
-        setLineTokenInput(prefsRes.line_notify_token ?? "");
       }
     }
     load();
@@ -83,35 +69,6 @@ export default function SettingsPage() {
       toast.error(t.common.error);
     } finally {
       setSavingPrefs(false);
-    }
-  }
-
-  async function handleSaveLine() {
-    await savePrefs({
-      line_notify_token: lineTokenInput || null,
-      line_enabled: !!lineTokenInput,
-    });
-  }
-
-  async function handleTestLine() {
-    if (!lineTokenInput) return;
-    setTestingLine(true);
-    try {
-      const res = await fetch("/api/notifications/line-test", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: lineTokenInput }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        toast.success("LINEにテスト通知を送信しました！");
-      } else {
-        toast.error(`テスト送信に失敗しました: ${data.error}`);
-      }
-    } catch {
-      toast.error("テスト送信に失敗しました");
-    } finally {
-      setTestingLine(false);
     }
   }
 
@@ -220,60 +177,21 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* LINE */}
+      {/* Email Notifications */}
       <Card>
         <CardContent className="pt-5 space-y-4">
+          <h2 className="font-semibold text-zinc-900 flex items-center gap-2">
+            <Mail className="h-4 w-4 text-blue-500" /> {t.settings.emailNotif}
+          </h2>
+          <p className="text-xs text-zinc-500">
+            {t.settings.emailHint}（{user?.email}）
+          </p>
           <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-zinc-900 flex items-center gap-2">
-              <MessageCircle className="h-4 w-4 text-green-500" /> {t.settings.line}
-            </h2>
-            {prefs.line_enabled && prefs.line_notify_token && (
-              <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
-                ✓ {t.settings.lineConnected}
-              </span>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-sm text-zinc-600">{t.settings.lineToken}</Label>
-            <Input
-              type="password"
-              placeholder="xxxxxxxxxxxxxxxx"
-              value={lineTokenInput}
-              onChange={(e) => setLineTokenInput(e.target.value)}
+            <Label className="text-sm text-zinc-700">{t.settings.emailEnabled}</Label>
+            <Switch
+              checked={prefs.email_enabled}
+              onCheckedChange={(v) => savePrefs({ email_enabled: v })}
             />
-            <p className="text-xs text-zinc-400">
-              <a
-                href="https://notify-bot.line.me/my/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-emerald-600 underline inline-flex items-center gap-1"
-              >
-                notify.line.me <ExternalLink className="h-3 w-3" />
-              </a>
-              {" "}{t.settings.lineTokenHint}
-            </p>
-          </div>
-
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-1"
-              onClick={handleTestLine}
-              loading={testingLine}
-              disabled={!lineTokenInput}
-            >
-              {t.settings.lineTest}
-            </Button>
-            <Button
-              size="sm"
-              className="flex-1"
-              onClick={handleSaveLine}
-              loading={savingPrefs}
-            >
-              {t.common.save}
-            </Button>
           </div>
         </CardContent>
       </Card>
