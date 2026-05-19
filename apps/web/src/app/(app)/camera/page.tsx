@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Camera, Upload, RotateCcw, AlertTriangle, CheckCircle, Loader2, X } from "lucide-react";
 import { DISCLAIMER } from "@/lib/ai/health-score";
+import { useI18n } from "@/lib/i18n";
 
 type AnalysisResult = {
   coat_condition: string;
@@ -22,6 +23,7 @@ type AnalysisResult = {
 
 export default function CameraPage() {
   const supabase = createBrowserClient();
+  const { locale } = useI18n();
   const fileRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -134,6 +136,7 @@ export default function CameraPage() {
       const formData = new FormData();
       formData.append("pet_id", petId);
       formData.append("file", file);
+      formData.append("locale", locale);
 
       const res = await fetch("/api/camera/analyze", {
         method: "POST",

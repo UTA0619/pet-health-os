@@ -11,6 +11,8 @@ export async function POST(request: NextRequest) {
   const formData = await request.formData();
   const petId = formData.get("pet_id") as string;
   const file = formData.get("file") as File;
+  const locale = (formData.get("locale") as string) ?? "ja";
+  const isEnglish = locale === "en";
 
   if (!petId || !file) {
     return NextResponse.json({ error: "pet_id and file are required" }, { status: 400 });
@@ -40,7 +42,16 @@ export async function POST(request: NextRequest) {
   if (!OPENAI_API_KEY) {
     // Return mock analysis if no API key (for development)
     return NextResponse.json({
-      analysis: {
+      analysis: isEnglish ? {
+        coat_condition: "Good condition",
+        eye_clarity: "Clear and bright",
+        posture: "Normal",
+        mobility: "Active",
+        visible_concerns: [],
+        confidence: 0.85,
+        recommendations: ["Maintain current care routine", "Continue regular health check-ups"],
+        requires_vet_attention: false,
+      } : {
         coat_condition: "良好",
         eye_clarity: "澄んでいる",
         posture: "正常",
@@ -53,22 +64,23 @@ export async function POST(request: NextRequest) {
     });
   }
 
+  const lang = isEnglish ? "English" : "Japanese";
   const prompt = `You are a veterinary AI assistant analyzing a photo of a ${pet.species} named ${pet.name}.
 Analyze the pet's visible health indicators and respond ONLY with a JSON object (no markdown, no explanation):
 {
-  "coat_condition": "brief assessment in Japanese (1-2 sentences)",
-  "eye_clarity": "brief assessment in Japanese (1-2 sentences)",
-  "posture": "brief assessment in Japanese (1-2 sentences)",
-  "mobility": "assessment based on visible posture/position in Japanese",
-  "visible_concerns": ["array of concerns in Japanese, empty if none"],
+  "coat_condition": "brief assessment in ${lang} (1-2 sentences)",
+  "eye_clarity": "brief assessment in ${lang} (1-2 sentences)",
+  "posture": "brief assessment in ${lang} (1-2 sentences)",
+  "mobility": "assessment based on visible posture/position in ${lang}",
+  "visible_concerns": ["array of concerns in ${lang}, empty if none"],
   "confidence": 0.0-1.0,
-  "recommendations": ["array of recommendations in Japanese, 2-3 items"],
+  "recommendations": ["array of recommendations in ${lang}, 2-3 items"],
   "requires_vet_attention": true/false
 }
 
 IMPORTANT:
 - Respond ONLY with the JSON object, nothing else
-- All text values must be in Japanese
+- All text values must be in ${lang}
 - Be conservative - only flag vet attention for clearly visible issues
 - Never provide a diagnosis, only observations`;
 

@@ -80,7 +80,7 @@ export default function LogPage() {
       }
     }
     load();
-  }, [supabase]);
+  }, [supabase, router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
