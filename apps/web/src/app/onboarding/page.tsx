@@ -14,7 +14,13 @@ import { ChevronRight, ChevronLeft } from "lucide-react";
 const STEPS = ["ようこそ", "ペット登録", "初回記録", "完了"] as const;
 type Step = 0 | 1 | 2 | 3;
 
-const SPECIES = ["犬", "猫", "うさぎ", "鳥", "その他"];
+const SPECIES: { label: string; value: string }[] = [
+  { label: "犬", value: "dog" },
+  { label: "猫", value: "cat" },
+  { label: "うさぎ", value: "rabbit" },
+  { label: "鳥", value: "bird" },
+  { label: "その他", value: "other" },
+];
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -24,9 +30,9 @@ export default function OnboardingPage() {
 
   const [pet, setPet] = useState({
     name: "",
-    species: "犬",
+    species: "dog",
     breed: "",
-    dob: "",
+    date_of_birth: "",
     weight_kg: "",
     sex: "male" as "male" | "female",
   });
@@ -45,7 +51,7 @@ export default function OnboardingPage() {
         name: pet.name,
         species: pet.species,
         breed: pet.breed || null,
-        dob: pet.dob || null,
+        date_of_birth: pet.date_of_birth || null,
         weight_kg: pet.weight_kg ? parseFloat(pet.weight_kg) : null,
         sex: pet.sex,
       })
@@ -140,16 +146,16 @@ export default function OnboardingPage() {
                 <div className="flex flex-wrap gap-2">
                   {SPECIES.map((s) => (
                     <button
-                      key={s}
+                      key={s.value}
                       type="button"
-                      onClick={() => setPet((p) => ({ ...p, species: s }))}
+                      onClick={() => setPet((p) => ({ ...p, species: s.value }))}
                       className={`px-4 py-2 rounded-full text-sm font-medium border-2 transition-colors ${
-                        pet.species === s
+                        pet.species === s.value
                           ? "border-emerald-500 bg-emerald-50 text-emerald-700"
                           : "border-zinc-200 text-zinc-600 hover:border-zinc-300"
                       }`}
                     >
-                      {s}
+                      {s.label}
                     </button>
                   ))}
                 </div>
@@ -167,9 +173,9 @@ export default function OnboardingPage() {
                   <Label>生年月日（任意）</Label>
                   <Input
                     type="date"
-                    value={pet.dob}
+                    value={pet.date_of_birth}
                     max={new Date().toISOString().split("T")[0]}
-                    onChange={(e) => setPet((p) => ({ ...p, dob: e.target.value }))}
+                    onChange={(e) => setPet((p) => ({ ...p, date_of_birth: e.target.value }))}
                   />
                 </div>
                 <div className="space-y-2">
