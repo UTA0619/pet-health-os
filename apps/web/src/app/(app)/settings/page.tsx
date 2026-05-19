@@ -5,52 +5,115 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { createBrowserClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LogOut, ChevronRight, Crown } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Card, CardContent } from "@/components/ui/card";
+import { LanguageSwitcher } from "@/components/language-switcher";
+import { useI18n } from "@/lib/i18n";
+import { ExternalLink, MessageCircle, Phone, Bell, Globe, LogOut, ChevronRight } from "lucide-react";
 
 export default function SettingsPage() {
-  const router = useRouter();
   const supabase = createBrowserClient();
-  const [email, setEmail] = useState<string>("");
-  const [isPro, setIsPro] = useState(false);
+  const router = useRouter();
+  const { t } = useI18n();
+
+  const [user, setUser] = useState<{ email?: string } | null>(null);
+  const [subscription, setSubscription] = useState<{ plan: string; status: string } | null>(null);
   const [upgrading, setUpgrading] = useState(false);
-  const [notifications, setNotifications] = useState({
-    daily_score: true,
+
+  // Notification prefs state
+  const [prefs, setPrefs] = useState<{
+    daily_score_reminder: boolean;
+    anomaly_alerts: boolean;
+    weekly_report: boolean;
+    health_tips: boolean;
+    line_notify_token: string | null;
+    line_enabled: boolean;
+    whatsapp_phone: string | null;
+    whatsapp_enabled: boolean;
+    reminder_hour: number;
+  }>({
+    daily_score_reminder: true,
     anomaly_alerts: true,
-    weekly_report: false,
+    weekly_report: true,
+    health_tips: false,
+    line_notify_token: null,
+    line_enabled: false,
+    whatsapp_phone: null,
+    whatsapp_enabled: false,
+    reminder_hour: 20,
   });
+  const [lineTokenInput, setLineTokenInput] = useState("");
+  const [testingLine, setTestingLine] = useState(false);
+  const [savingPrefs, setSavingPrefs] = useState(false);
 
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      setEmail(user.email ?? "");
+      setUser(user);
 
-      const { data: sub } = await supabase
-        .from("subscriptions")
-        .select("plan, status")
-        .eq("user_id", user.id)
-        .single();
-      if (sub?.plan === "pro" && sub?.status === "active") setIsPro(true);
+      const [subRes, prefsRes] = await Promise.all([
+        supabase.from("subscriptions").select("plan, status").eq("user_id", user.id).single(),
+        fetch("/api/notifications/preferences").then((r) => r.json()),
+      ]);
 
-      const { data: prefs } = await supabase
-        .from("notification_preferences")
-        .select("*")
-        .eq("user_id", user.id)
-        .single();
-      if (prefs) {
-        setNotifications({
-          daily_score: prefs.daily_score_reminder ?? true,
-          anomaly_alerts: prefs.anomaly_alerts ?? true,
-          weekly_report: prefs.weekly_report ?? false,
-        });
+      if (subRes.data) setSubscription(subRes.data);
+      if (prefsRes && !prefsRes.error) {
+        setPrefs((p) => ({ ...p, ...prefsRes }));
+        setLineTokenInput(prefsRes.line_notify_token ?? "");
       }
     }
     load();
   }, [supabase]);
+
+  async function savePrefs(updates: Partial<typeof prefs>) {
+    setSavingPrefs(true);
+    try {
+      const res = await fetch("/api/notifications/preferences", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updates),
+      });
+      if (!res.ok) throw new Error("Save failed");
+      setPrefs((p) => ({ ...p, ...updates }));
+      toast.success(t.common.success);
+    } catch {
+      toast.error(t.common.error);
+    } finally {
+      setSavingPrefs(false);
+    }
+  }
+
+  async function handleSaveLine() {
+    await savePrefs({
+      line_notify_token: lineTokenInput || null,
+      line_enabled: !!lineTokenInput,
+    });
+  }
+
+  async function handleTestLine() {
+    if (!lineTokenInput) return;
+    setTestingLine(true);
+    try {
+      const res = await fetch("/api/notifications/line-test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: lineTokenInput }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("LINEにテスト通知を送信しました！");
+      } else {
+        toast.error(`テスト送信に失敗しました: ${data.error}`);
+      }
+    } catch {
+      toast.error("テスト送信に失敗しました");
+    } finally {
+      setTestingLine(false);
+    }
+  }
 
   async function handleUpgrade() {
     setUpgrading(true);
@@ -63,7 +126,7 @@ export default function SettingsPage() {
       const { url } = await res.json();
       if (url) window.location.href = url;
     } catch {
-      toast.error("エラーが発生しました");
+      toast.error(t.common.error);
     } finally {
       setUpgrading(false);
     }
@@ -72,92 +135,189 @@ export default function SettingsPage() {
   async function handleSignOut() {
     await supabase.auth.signOut();
     router.push("/login");
-    router.refresh();
   }
 
-  async function updateNotification(key: keyof typeof notifications, value: boolean) {
-    setNotifications((prev) => ({ ...prev, [key]: value }));
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const field = key === "daily_score" ? "daily_score_reminder" : key === "anomaly_alerts" ? "anomaly_alerts" : "weekly_report";
-    await supabase.from("notification_preferences").upsert(
-      { user_id: user.id, [field]: value },
-      { onConflict: "user_id" }
-    );
-  }
+  const isPro = subscription?.plan === "pro" && subscription?.status !== "cancelled";
+
+  const HOURS = [6, 7, 8, 9, 18, 19, 20, 21, 22];
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-6 space-y-5">
-      <h1 className="text-xl font-bold text-zinc-900">設定</h1>
+    <div className="max-w-lg mx-auto px-4 py-6 pb-24 space-y-6">
+      <h1 className="text-xl font-bold text-zinc-900">{t.settings.title}</h1>
 
+      {/* Account */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">アカウント</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex items-center justify-between py-2">
-            <span className="text-sm text-zinc-600">メールアドレス</span>
-            <span className="text-sm font-medium text-zinc-900 truncate ml-4 max-w-[200px]">{email}</span>
-          </div>
-          <div className="flex items-center justify-between py-2 border-t border-zinc-100">
-            <span className="text-sm text-zinc-600">プラン</span>
-            {isPro ? (
-              <Badge className="flex items-center gap-1">
-                <Crown className="h-3 w-3" /> Pro
-              </Badge>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary">Free</Badge>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-7 text-xs"
-                  onClick={handleUpgrade}
-                  loading={upgrading}
-                >
-                  アップグレード
-                </Button>
+        <CardContent className="pt-5 space-y-4">
+          <h2 className="font-semibold text-zinc-900 flex items-center gap-2">
+            <span>👤</span> {t.settings.account}
+          </h2>
+          <div className="text-sm text-zinc-500">{t.settings.email}</div>
+          <div className="text-sm font-medium text-zinc-900">{user?.email}</div>
+          <div className="flex items-center justify-between pt-1">
+            <div>
+              <div className="text-sm text-zinc-500">{t.settings.plan}</div>
+              <div className={`text-sm font-semibold mt-0.5 ${isPro ? "text-emerald-600" : "text-zinc-700"}`}>
+                {isPro ? t.settings.pro : t.settings.free}
               </div>
+            </div>
+            {!isPro && (
+              <Button size="sm" onClick={handleUpgrade} loading={upgrading}>
+                {t.settings.upgrade}
+              </Button>
             )}
           </div>
         </CardContent>
       </Card>
 
+      {/* Language */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">通知設定</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {[
-            { key: "daily_score" as const, label: "毎日の健康スコア", desc: "毎朝8時に通知" },
-            { key: "anomaly_alerts" as const, label: "異常検出アラート", desc: "問題を検出したらすぐに通知" },
-            { key: "weekly_report" as const, label: "週次レポート", desc: "毎週月曜日にサマリー通知" },
-          ].map(({ key, label, desc }) => (
-            <div key={key} className="flex items-center justify-between">
-              <div>
-                <Label className="text-sm font-medium">{label}</Label>
-                <p className="text-xs text-zinc-400 mt-0.5">{desc}</p>
-              </div>
-              <Switch
-                checked={notifications[key]}
-                onCheckedChange={(v) => updateNotification(key, v)}
-              />
-            </div>
-          ))}
+        <CardContent className="pt-5 space-y-3">
+          <h2 className="font-semibold text-zinc-900 flex items-center gap-2">
+            <Globe className="h-4 w-4" /> {t.settings.language}
+          </h2>
+          <LanguageSwitcher />
         </CardContent>
       </Card>
 
+      {/* Push Notifications */}
       <Card>
-        <CardContent className="pt-4 space-y-1">
+        <CardContent className="pt-5 space-y-4">
+          <h2 className="font-semibold text-zinc-900 flex items-center gap-2">
+            <Bell className="h-4 w-4" /> {t.settings.notifications}
+          </h2>
           {[
-            { label: "プライバシーポリシー", href: "#" },
-            { label: "利用規約", href: "#" },
-            { label: "お問い合わせ", href: "#" },
+            { key: "daily_score_reminder" as const, label: t.settings.dailyReminder },
+            { key: "anomaly_alerts" as const, label: t.settings.anomalyAlerts },
+            { key: "weekly_report" as const, label: t.settings.weeklyReport },
+            { key: "health_tips" as const, label: t.settings.healthTips },
+          ].map(({ key, label }) => (
+            <div key={key} className="flex items-center justify-between">
+              <Label className="text-sm text-zinc-700 cursor-pointer">{label}</Label>
+              <Switch
+                checked={prefs[key]}
+                onCheckedChange={(v) => savePrefs({ [key]: v })}
+              />
+            </div>
+          ))}
+          <div className="pt-2 border-t border-zinc-100">
+            <Label className="text-sm text-zinc-500 mb-2 block">{t.settings.reminderTime}</Label>
+            <div className="flex flex-wrap gap-2">
+              {HOURS.map((h) => (
+                <button
+                  key={h}
+                  onClick={() => savePrefs({ reminder_hour: h })}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                    prefs.reminder_hour === h
+                      ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+                      : "border-zinc-200 text-zinc-600 hover:border-zinc-300"
+                  }`}
+                >
+                  {h}:00
+                </button>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* LINE */}
+      <Card>
+        <CardContent className="pt-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="font-semibold text-zinc-900 flex items-center gap-2">
+              <MessageCircle className="h-4 w-4 text-green-500" /> {t.settings.line}
+            </h2>
+            {prefs.line_enabled && prefs.line_notify_token && (
+              <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
+                ✓ {t.settings.lineConnected}
+              </span>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm text-zinc-600">{t.settings.lineToken}</Label>
+            <Input
+              type="password"
+              placeholder="xxxxxxxxxxxxxxxx"
+              value={lineTokenInput}
+              onChange={(e) => setLineTokenInput(e.target.value)}
+            />
+            <p className="text-xs text-zinc-400">
+              <a
+                href="https://notify-bot.line.me/my/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-emerald-600 underline inline-flex items-center gap-1"
+              >
+                notify.line.me <ExternalLink className="h-3 w-3" />
+              </a>
+              {" "}{t.settings.lineTokenHint}
+            </p>
+          </div>
+
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1"
+              onClick={handleTestLine}
+              loading={testingLine}
+              disabled={!lineTokenInput}
+            >
+              {t.settings.lineTest}
+            </Button>
+            <Button
+              size="sm"
+              className="flex-1"
+              onClick={handleSaveLine}
+              loading={savingPrefs}
+            >
+              {t.common.save}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* WhatsApp */}
+      <Card>
+        <CardContent className="pt-5 space-y-4">
+          <h2 className="font-semibold text-zinc-900 flex items-center gap-2">
+            <Phone className="h-4 w-4 text-green-600" /> {t.settings.whatsapp}
+          </h2>
+          <div className="space-y-2">
+            <Label className="text-sm text-zinc-600">{t.settings.whatsappPhone}</Label>
+            <Input
+              type="tel"
+              placeholder="+819012345678"
+              value={prefs.whatsapp_phone ?? ""}
+              onChange={(e) => setPrefs((p) => ({ ...p, whatsapp_phone: e.target.value }))}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <Label className="text-sm text-zinc-700">{t.settings.whatsappEnabled}</Label>
+            <Switch
+              checked={prefs.whatsapp_enabled}
+              onCheckedChange={(v) => {
+                setPrefs((p) => ({ ...p, whatsapp_enabled: v }));
+                savePrefs({ whatsapp_phone: prefs.whatsapp_phone, whatsapp_enabled: v });
+              }}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Links */}
+      <Card>
+        <CardContent className="pt-5 divide-y divide-zinc-100">
+          {[
+            { label: t.settings.privacy, href: "/privacy" },
+            { label: t.settings.terms, href: "/terms" },
+            { label: t.settings.contact, href: "mailto:support@pethealthos.com" },
           ].map(({ label, href }) => (
             <a
               key={label}
               href={href}
-              className="flex items-center justify-between py-3 text-sm text-zinc-700 hover:text-zinc-900 border-b border-zinc-100 last:border-0"
+              className="flex items-center justify-between py-3 text-sm text-zinc-700 hover:text-zinc-900"
             >
               {label}
               <ChevronRight className="h-4 w-4 text-zinc-400" />
@@ -166,12 +326,15 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      <Button variant="outline" className="w-full text-red-500 hover:text-red-600 hover:bg-red-50 border-red-200" onClick={handleSignOut}>
+      {/* Sign Out */}
+      <Button
+        variant="outline"
+        className="w-full text-zinc-600"
+        onClick={handleSignOut}
+      >
         <LogOut className="h-4 w-4" />
-        ログアウト
+        {t.settings.signOut}
       </Button>
-
-      <p className="text-xs text-zinc-400 text-center">Pet Health OS v1.0.0</p>
     </div>
   );
 }

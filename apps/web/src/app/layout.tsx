@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import { Toaster } from "sonner";
+import { I18nProvider } from "@/lib/i18n";
 import "./globals.css";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
@@ -43,7 +44,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ja" className={`${geist.variable} h-full antialiased`}>
       <body className="min-h-full bg-zinc-50 text-zinc-900">
-        {children}
+        <I18nProvider>
+          {children}
+        </I18nProvider>
         <Toaster position="top-center" richColors closeButton />
       </body>
     </html>

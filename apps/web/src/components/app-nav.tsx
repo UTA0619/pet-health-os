@@ -4,16 +4,19 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, PlusSquare, Camera, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const navItems = [
-  { href: "/dashboard", icon: Home, label: "ホーム" },
-  { href: "/log", icon: PlusSquare, label: "記録" },
-  { href: "/camera", icon: Camera, label: "スキャン" },
-  { href: "/settings", icon: Settings, label: "設定" },
-];
+import { useI18n } from "@/lib/i18n";
 
 export function AppNav() {
   const pathname = usePathname();
+  const { t } = useI18n();
+
+  const navItems = [
+    { href: "/dashboard", icon: Home, label: t.nav.home },
+    { href: "/log", icon: PlusSquare, label: t.nav.log },
+    { href: "/camera", icon: Camera, label: t.nav.camera },
+    { href: "/settings", icon: Settings, label: t.nav.settings },
+  ];
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-zinc-200 pb-safe">
       <div className="flex items-center justify-around h-16 max-w-lg mx-auto px-4">

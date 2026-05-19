@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/cleanup-expired-sessions",
       "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/send-health-alerts",
+      "schedule": "0 * * * *"
     }
   ],
   "headers": [
