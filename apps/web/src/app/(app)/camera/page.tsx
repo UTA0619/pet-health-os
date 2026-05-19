@@ -6,7 +6,7 @@ import { createBrowserClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Camera, Upload, RotateCcw, AlertTriangle, CheckCircle, Loader2 } from "lucide-react";
+import { Camera, Upload, RotateCcw, AlertTriangle, CheckCircle, Loader2, X } from "lucide-react";
 import { DISCLAIMER } from "@/lib/ai/health-score";
 
 type AnalysisResult = {
@@ -23,12 +23,18 @@ type AnalysisResult = {
 export default function CameraPage() {
   const supabase = createBrowserClient();
   const fileRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
   const [preview, setPreview] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [petId, setPetId] = useState<string | null>(null);
   const [petName, setPetName] = useState<string>("");
   const [uploading, setUploading] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [cameraActive, setCameraActive] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadPet() {
@@ -45,6 +51,66 @@ export default function CameraPage() {
     }
     loadPet();
   }, [supabase]);
+
+  // カメラストリームを停止（アンマウント時も）
+  useEffect(() => {
+    return () => {
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+    };
+  }, []);
+
+  async function startCamera() {
+    setCameraError(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false,
+      });
+      streamRef.current = stream;
+      setCameraActive(true);
+      // videoRef は次のレンダリング後にセット
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.play().catch(() => {});
+        }
+      }, 50);
+    } catch {
+      setCameraError("カメラへのアクセスが許可されていません。\nブラウザのアドレスバー左のカメラアイコンから許可してください。");
+    }
+  }
+
+  function stopCamera() {
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+    setCameraActive(false);
+    setCameraError(null);
+  }
+
+  function capturePhoto() {
+    if (!videoRef.current || !canvasRef.current) return;
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    canvas.width = video.videoWidth || 1280;
+    canvas.height = video.videoHeight || 720;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.drawImage(video, 0, 0);
+    stopCamera();
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) return;
+        const f = new File([blob], `capture-${Date.now()}.jpg`, { type: "image/jpeg" });
+        setFile(f);
+        setResult(null);
+        const reader = new FileReader();
+        reader.onload = () => setPreview(reader.result as string);
+        reader.readAsDataURL(f);
+      },
+      "image/jpeg",
+      0.92
+    );
+  }
 
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -99,6 +165,7 @@ export default function CameraPage() {
     setPreview(null);
     setFile(null);
     setResult(null);
+    stopCamera();
     if (fileRef.current) fileRef.current.value = "";
   }
 
@@ -111,10 +178,50 @@ export default function CameraPage() {
         </p>
       </div>
 
-      {!preview ? (
+      {/* ── ライブカメラビュー ─────────────────── */}
+      {cameraActive && (
+        <div className="relative rounded-2xl overflow-hidden bg-zinc-900">
+          <video
+            ref={videoRef}
+            playsInline
+            muted
+            autoPlay
+            className="w-full object-cover max-h-72"
+          />
+          <canvas ref={canvasRef} className="hidden" />
+          <button
+            onClick={stopCamera}
+            className="absolute top-3 right-3 bg-black/50 text-white rounded-full p-1.5 hover:bg-black/70"
+          >
+            <X className="h-5 w-5" />
+          </button>
+          <div className="absolute bottom-4 left-0 right-0 flex justify-center">
+            <button
+              onClick={capturePhoto}
+              className="w-16 h-16 rounded-full bg-white border-4 border-emerald-500 shadow-lg hover:scale-105 transition-transform active:scale-95"
+              aria-label="撮影"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* ── 写真未選択 ────────────────────────── */}
+      {!cameraActive && !preview && (
         <Card>
           <CardContent className="pt-6">
-            <label className="flex flex-col items-center justify-center gap-4 py-12 cursor-pointer rounded-xl border-2 border-dashed border-zinc-200 hover:border-emerald-400 transition-colors">
+            {cameraError && (
+              <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-sm text-red-700 whitespace-pre-line">
+                {cameraError}
+              </div>
+            )}
+
+            <label className="flex flex-col items-center justify-center gap-4 py-12 cursor-pointer rounded-xl border-2 border-dashed border-zinc-200 hover:border-emerald-400 transition-colors"
+              onClick={(e) => {
+                // ラベルクリックはライブラリ選択に使う
+                e.preventDefault();
+                if (fileRef.current) fileRef.current.click();
+              }}
+            >
               <div className="h-16 w-16 rounded-full bg-emerald-50 flex items-center justify-center">
                 <Camera className="h-8 w-8 text-emerald-500" />
               </div>
@@ -126,7 +233,6 @@ export default function CameraPage() {
                 ref={fileRef}
                 type="file"
                 accept="image/*"
-                capture="environment"
                 className="sr-only"
                 onChange={handleFileChange}
               />
@@ -136,19 +242,14 @@ export default function CameraPage() {
               <Button
                 variant="outline"
                 className="flex-1"
-                onClick={() => {
-                  if (fileRef.current) {
-                    fileRef.current.removeAttribute("capture");
-                    fileRef.current.click();
-                  }
-                }}
+                onClick={() => fileRef.current?.click()}
               >
                 <Upload className="h-4 w-4" />
                 ライブラリから選択
               </Button>
               <Button
                 className="flex-1"
-                onClick={() => fileRef.current?.click()}
+                onClick={startCamera}
               >
                 <Camera className="h-4 w-4" />
                 カメラで撮影
@@ -156,7 +257,10 @@ export default function CameraPage() {
             </div>
           </CardContent>
         </Card>
-      ) : (
+      )}
+
+      {/* ── 写真プレビュー ──────────────────────── */}
+      {!cameraActive && preview && (
         <div className="space-y-4">
           <div className="relative rounded-2xl overflow-hidden bg-zinc-900">
             <img src={preview} alt="Preview" className="w-full object-contain max-h-72" />
@@ -182,6 +286,7 @@ export default function CameraPage() {
         </div>
       )}
 
+      {/* ── 分析結果 ──────────────────────────── */}
       {result && (
         <div className="space-y-4">
           <Card className={result.requires_vet_attention ? "border-red-200" : "border-emerald-200"}>
