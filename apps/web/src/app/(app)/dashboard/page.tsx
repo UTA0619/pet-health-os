@@ -1,6 +1,8 @@
 import { createServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { Suspense } from "react";
+import { UpgradeToast } from "./upgrade-toast";
 import {
   computeHealthScore,
   computeStreak,
@@ -151,6 +153,9 @@ export default async function DashboardPage() {
 
   return (
     <div className="max-w-lg mx-auto px-4 py-6 space-y-5 pb-24">
+      <Suspense>
+        <UpgradeToast />
+      </Suspense>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

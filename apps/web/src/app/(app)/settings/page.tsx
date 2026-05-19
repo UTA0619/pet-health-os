@@ -20,8 +20,6 @@ export default function SettingsPage() {
 
   const [user, setUser] = useState<{ email?: string } | null>(null);
   const [subscription, setSubscription] = useState<{ plan: string; status: string } | null>(null);
-  const [upgrading, setUpgrading] = useState(false);
-
   // Notification prefs state
   const [prefs, setPrefs] = useState({
     daily_score_reminder: true,
@@ -72,21 +70,8 @@ export default function SettingsPage() {
     }
   }
 
-  async function handleUpgrade() {
-    setUpgrading(true);
-    try {
-      const res = await fetch("/api/stripe/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: "pro_monthly" }),
-      });
-      const { url } = await res.json();
-      if (url) window.location.href = url;
-    } catch {
-      toast.error(t.common.error);
-    } finally {
-      setUpgrading(false);
-    }
+  function handleUpgrade() {
+    router.push("/upgrade");
   }
 
   async function handleSignOut() {
@@ -118,7 +103,7 @@ export default function SettingsPage() {
               </div>
             </div>
             {!isPro && (
-              <Button size="sm" onClick={handleUpgrade} loading={upgrading}>
+              <Button size="sm" onClick={handleUpgrade}>
                 {t.settings.upgrade}
               </Button>
             )}
