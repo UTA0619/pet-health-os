@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
   const { data, error } = await supabase
     .from("health_logs")
     .upsert(
-      { ...parsed.data, logged_by: user.id },
+      { ...parsed.data, logged_by: 'owner' },
       { onConflict: "pet_id,log_date" }
     )
     .select()

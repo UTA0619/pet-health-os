@@ -33,7 +33,8 @@ export async function updateSession(request: NextRequest) {
     url.pathname.startsWith("/onboarding") ||
     url.pathname.startsWith("/pets") ||
     url.pathname === "/log" || url.pathname.startsWith("/log/") ||
-    url.pathname.startsWith("/camera");
+    url.pathname.startsWith("/camera") ||
+    url.pathname.startsWith("/settings");
 
   if (!user && isProtectedRoute) {
     url.pathname = "/login";

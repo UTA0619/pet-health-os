@@ -27,16 +27,8 @@ export interface ScoreResult {
   confidence: number;
 }
 
-export function computeHealthScore(logs: HealthLog[]): ScoreResult {
-  if (logs.length === 0) {
-    return {
-      overall: 0,
-      components: Object.fromEntries(Object.keys(WEIGHTS).map((k) => [k, 50])) as Record<MetricKey, number>,
-      trend: "stable",
-      trendDelta: 0,
-      confidence: 0,
-    };
-  }
+export function computeHealthScore(logs: HealthLog[]): ScoreResult | null {
+  if (logs.length === 0) return null;
 
   const latest = logs[0];
   const components = {} as Record<MetricKey, number>;

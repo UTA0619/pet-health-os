@@ -25,6 +25,7 @@ export default function LogPage() {
   const router = useRouter();
   const supabase = createBrowserClient();
   const [petId, setPetId] = useState<string | null>(null);
+  const [petName, setPetName] = useState<string>("");
   const [values, setValues] = useState<Record<MetricKey, number>>({
     activity_level: 3,
     appetite: 3,
@@ -44,14 +45,18 @@ export default function LogPage() {
 
       const { data: pets } = await supabase
         .from("pets")
-        .select("id")
+        .select("id, name")
         .eq("owner_id", user.id)
         .eq("is_active", true)
         .limit(1)
         .single();
 
-      if (!pets) return;
+      if (!pets) {
+        router.push("/onboarding");
+        return;
+      }
       setPetId(pets.id);
+      setPetName(pets.name);
 
       const today = new Date().toISOString().split("T")[0];
       const { data: existing } = await supabase
@@ -83,24 +88,38 @@ export default function LogPage() {
     setLoading(true);
 
     const today = new Date().toISOString().split("T")[0];
-    const { error } = await supabase.from("health_logs").upsert(
-      { pet_id: petId, log_date: today, ...values, notes: notes || null },
-      { onConflict: "pet_id,log_date" }
-    );
-
-    if (error) {
-      toast.error("記録の保存に失敗しました");
-    } else {
+    try {
+      const res = await fetch("/api/health-logs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pet_id: petId,
+          log_date: today,
+          activity_level: values.activity_level,
+          appetite: values.appetite,
+          stool_quality: values.stool_quality,
+          coat_condition: values.coat_condition,
+          eye_clarity: values.eye_clarity,
+          energy_level: values.energy_level,
+          notes: notes || undefined,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to save");
       toast.success("今日の健康記録を保存しました！");
       router.push("/dashboard");
+    } catch {
+      toast.error("記録の保存に失敗しました");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   return (
     <div className="max-w-lg mx-auto px-4 py-6">
       <div className="mb-6">
-        <h1 className="text-xl font-bold text-zinc-900">今日の健康記録</h1>
+        <h1 className="text-xl font-bold text-zinc-900">
+          {petName ? `${petName}の` : ""}今日の健康記録
+        </h1>
         <p className="text-sm text-zinc-500 mt-1">各項目を1〜5で評価してください</p>
       </div>
 

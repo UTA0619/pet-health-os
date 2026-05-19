@@ -6,11 +6,10 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatDate(date: string | Date): string {
-  return new Intl.DateTimeFormat("ja-JP", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  }).format(new Date(date));
+  const d = typeof date === "string"
+    ? new Date(date + (date.length === 10 ? "T00:00:00" : ""))  // treat YYYY-MM-DD as local time
+    : date;
+  return d.toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" });
 }
 
 export function scoreToColor(score: number): string {

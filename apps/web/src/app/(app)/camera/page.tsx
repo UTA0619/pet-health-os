@@ -131,24 +131,21 @@ export default function CameraPage() {
     setUploading(true);
 
     try {
-      const { data: urlData, error: urlError } = await supabase.functions.invoke("analyze-pet-image", {
-        body: { pet_id: petId, file_name: file.name, content_type: file.type },
+      const formData = new FormData();
+      formData.append("pet_id", petId);
+      formData.append("file", file);
+
+      const res = await fetch("/api/camera/analyze", {
+        method: "POST",
+        body: formData,
       });
 
-      if (urlError) throw urlError;
+      if (!res.ok) throw new Error("Analysis failed");
 
-      if (urlData?.upload_url) {
-        await fetch(urlData.upload_url, {
-          method: "PUT",
-          body: file,
-          headers: { "Content-Type": file.type },
-        });
-      }
-
-      const analysis = urlData?.analysis as AnalysisResult;
+      const { analysis } = await res.json();
       if (analysis) {
-        setResult(analysis);
-        if (analysis.requires_vet_attention) {
+        setResult(analysis as AnalysisResult);
+        if ((analysis as AnalysisResult).requires_vet_attention) {
           toast.warning("獣医師への相談が推奨されます", { duration: 6000 });
         } else {
           toast.success("分析完了！");

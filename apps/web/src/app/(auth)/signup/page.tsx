@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { createBrowserClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -11,10 +10,10 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function SignupPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
   const supabase = createBrowserClient();
 
   async function handleSignup(e: React.FormEvent) {
@@ -32,8 +31,7 @@ export default function SignupPage() {
     if (error) {
       toast.error(error.message);
     } else {
-      toast.success("確認メールを送信しました。メールをご確認ください。");
-      router.push("/onboarding");
+      setEmailSent(true);
     }
     setLoading(false);
   }
@@ -43,6 +41,31 @@ export default function SignupPage() {
       provider: "google",
       options: { redirectTo: `${location.origin}/auth/callback` },
     });
+  }
+
+  if (emailSent) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="w-full max-w-sm text-center">
+          <div className="text-5xl mb-4">📧</div>
+          <h2 className="text-xl font-bold text-zinc-900">確認メールを送信しました</h2>
+          <p className="text-zinc-500 mt-3 text-sm leading-relaxed">
+            <span className="font-medium text-zinc-700">{email}</span> に確認メールを送りました。
+            <br />
+            メール内のリンクをクリックして登録を完了してください。
+          </p>
+          <p className="text-xs text-zinc-400 mt-6">
+            メールが届かない場合は迷惑メールフォルダをご確認ください。
+          </p>
+          <button
+            onClick={() => setEmailSent(false)}
+            className="mt-4 text-sm text-emerald-600 hover:underline"
+          >
+            別のメールアドレスで登録
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (

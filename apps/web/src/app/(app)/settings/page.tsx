@@ -16,6 +16,7 @@ export default function SettingsPage() {
   const supabase = createBrowserClient();
   const [email, setEmail] = useState<string>("");
   const [isPro, setIsPro] = useState(false);
+  const [upgrading, setUpgrading] = useState(false);
   const [notifications, setNotifications] = useState({
     daily_score: true,
     anomaly_alerts: true,
@@ -50,6 +51,23 @@ export default function SettingsPage() {
     }
     load();
   }, [supabase]);
+
+  async function handleUpgrade() {
+    setUpgrading(true);
+    try {
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: "pro_monthly" }),
+      });
+      const { url } = await res.json();
+      if (url) window.location.href = url;
+    } catch {
+      toast.error("エラーが発生しました");
+    } finally {
+      setUpgrading(false);
+    }
+  }
 
   async function handleSignOut() {
     await supabase.auth.signOut();
@@ -90,7 +108,13 @@ export default function SettingsPage() {
             ) : (
               <div className="flex items-center gap-2">
                 <Badge variant="secondary">Free</Badge>
-                <Button size="sm" variant="outline" className="h-7 text-xs">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs"
+                  onClick={handleUpgrade}
+                  loading={upgrading}
+                >
                   アップグレード
                 </Button>
               </div>

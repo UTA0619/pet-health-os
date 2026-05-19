@@ -30,5 +30,6 @@ export async function GET(request: NextRequest) {
   const logs: HealthLog[] = logsRaw ?? [];
   const score = computeHealthScore(logs);
 
+  if (!score) return NextResponse.json({ noData: true }, { status: 200 });
   return NextResponse.json(score);
 }

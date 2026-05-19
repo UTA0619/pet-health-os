@@ -1,0 +1,17 @@
+{
+  "name": "Pet Health OS",
+  "short_name": "PetHealth",
+  "description": "AIがあなたのペットの健康を毎日スコアで見える化",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4f4f5",
+  "theme_color": "#10b981",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "any",
+      "type": "image/x-icon"
+    }
+  ]
+}
