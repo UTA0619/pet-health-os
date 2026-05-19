@@ -32,7 +32,7 @@ export async function updateSession(request: NextRequest) {
   const isProtectedRoute = url.pathname.startsWith("/dashboard") ||
     url.pathname.startsWith("/onboarding") ||
     url.pathname.startsWith("/pets") ||
-    url.pathname.startsWith("/log") ||
+    url.pathname === "/log" || url.pathname.startsWith("/log/") ||
     url.pathname.startsWith("/camera");
 
   if (!user && isProtectedRoute) {
