@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
 import { AppNav } from "@/components/app-nav";
+import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
+import { PushPermissionBanner } from "@/components/push-permission";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createServerClient();
@@ -9,9 +11,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (!user) redirect("/login");
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <main className="flex-1 pb-20">{children}</main>
+    <div className="flex flex-col min-h-screen min-h-dvh">
+      <main className="flex-1 overflow-y-auto pb-20">{children}</main>
       <AppNav />
+      <PwaInstallPrompt />
+      <PushPermissionBanner />
     </div>
   );
 }

@@ -105,6 +105,7 @@ export default function LogPage() {
         }),
       });
       if (!res.ok) throw new Error("Failed to save");
+      if ("vibrate" in navigator) navigator.vibrate([100, 50, 100]);
       toast.success("今日の健康記録を保存しました！");
       router.push("/dashboard");
     } catch {
@@ -147,7 +148,11 @@ export default function LogPage() {
                   <button
                     key={v}
                     type="button"
-                    onClick={() => setValues((prev) => ({ ...prev, [metric]: v }))}
+                    onClick={() => {
+                      setValues((prev) => ({ ...prev, [metric]: v }));
+                      // Haptic feedback on mobile
+                      if ("vibrate" in navigator) navigator.vibrate(10);
+                    }}
                     className={`flex-1 flex flex-col items-center gap-1 py-3 rounded-xl border-2 transition-all ${
                       values[metric] === v
                         ? "border-emerald-500 bg-emerald-50"

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { sendReminderNotification, sendScoreNotification } from "@/lib/notifications";
 import { computeHealthScore } from "@/lib/ai/health-score";
+import { sendPushNotification } from "@/lib/push/sender";
 
 export const maxDuration = 60;
 
@@ -49,16 +50,52 @@ export async function GET(request: NextRequest) {
       whatsapp_phone: pref.whatsapp_phone,
     };
 
+    // Fetch push subscriptions for this user
+    const { data: pushSubs } = await supabase
+      .from("push_subscriptions")
+      .select("endpoint, p256dh, auth")
+      .eq("user_id", pref.user_id);
+
     if (!todayLog && pref.daily_score_reminder) {
       const result = await sendReminderNotification(notifPrefs, pet.name, locale);
       if (result.sent.length > 0) reminders++;
+
+      // Send push notifications for reminder
+      if (pushSubs?.length) {
+        for (const sub of pushSubs) {
+          const pushResult = await sendPushNotification(sub, {
+            title: "🐾 健康記録の時間です",
+            body: `${pet.name}の今日の健康を記録しましょう！`,
+            url: "/log",
+          });
+          if (pushResult.gone) {
+            await supabase.from("push_subscriptions").delete().eq("endpoint", sub.endpoint);
+          }
+        }
+      }
     } else if (todayLog) {
       const { data: logs } = await supabase.from("health_logs").select("*").eq("pet_id", pet.id).order("log_date", { ascending: false }).limit(7);
       if (logs?.length) {
         const score = computeHealthScore(logs);
         if (score) {
-          const result = await sendScoreNotification(notifPrefs, pet.name, Math.round(score.overall), score.trend, locale);
+          const roundedScore = Math.round(score.overall);
+          const result = await sendScoreNotification(notifPrefs, pet.name, roundedScore, score.trend, locale);
           if (result.sent.length > 0) scores++;
+
+          // Send push notifications for score
+          const trendEmoji = score.trend === "improving" ? "↑" : score.trend === "declining" ? "↓" : "→";
+          if (pushSubs?.length) {
+            for (const sub of pushSubs) {
+              const pushResult = await sendPushNotification(sub, {
+                title: `🐾 ${pet.name}の健康スコア: ${roundedScore}/100`,
+                body: `今日のスコア: ${roundedScore}/100 ${trendEmoji}`,
+                url: "/dashboard",
+              });
+              if (pushResult.gone) {
+                await supabase.from("push_subscriptions").delete().eq("endpoint", sub.endpoint);
+              }
+            }
+          }
         }
       }
     }
