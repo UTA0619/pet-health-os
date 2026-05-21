@@ -24,7 +24,9 @@
   "devDependencies": {
     "turbo": "^2.0.0",
     "typescript": "^5.4.0",
-    "prettier": "^3.2.0"
+    "prettier": "^3.2.0",
+    "react-native-worklets": "0.5.1",
+    "expo-router": "~6.0.23"
   },
   "engines": {
     "node": ">=20.0.0",
