@@ -118,11 +118,39 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
 
+  # ── AI Eval (runs on AI-related changes) ─────────────────────
+  ai-eval:
+    name: AI Model Evaluation
+    runs-on: ubuntu-latest
+    needs: [type-check]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+        with: { version: "${{ env.PNPM_VERSION }}" }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Run AI evaluation pipeline
+        run: |
+          cd apps/web
+          npx tsx ../../scripts/eval/ai-eval.ts --json > eval-results.json
+          cat eval-results.json
+        # Fail the job if eval metrics regress (script exits 1)
+      - name: Upload eval results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-eval-results
+          path: apps/web/eval-results.json
+          retention-days: 30
+
   # ── Final gate ───────────────────────────────────────────────
   ci-gate:
     name: CI Pass
     runs-on: ubuntu-latest
-    needs: [type-check, lint, test, migration-check, secret-scan, dependency-audit, build]
+    needs: [type-check, lint, test, migration-check, secret-scan, dependency-audit, build, ai-eval]
     if: always()
     steps:
       - name: Check all jobs passed
