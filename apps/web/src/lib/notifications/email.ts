@@ -50,6 +50,33 @@ export async function sendEmail(params: {
   }
 }
 
+export function buildHealthAlertEmail(petName: string, alertType: string, severity: string): { subject: string; html: string } {
+  return {
+    subject: `🚨 ${petName}の健康アラート — ${severity}レベル`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #dc2626;">⚠️ 健康アラート</h2>
+        <p><strong>${petName}</strong>の健康データに異常が検知されました。</p>
+        <table style="width:100%; border-collapse:collapse; margin: 16px 0;">
+          <tr>
+            <td style="padding:8px; background:#fee2e2; font-weight:bold;">重症度</td>
+            <td style="padding:8px; background:#fee2e2;">${severity}</td>
+          </tr>
+          <tr>
+            <td style="padding:8px;">異常タイプ</td>
+            <td style="padding:8px;">${alertType}</td>
+          </tr>
+        </table>
+        <p>Pet Health OSで詳細を確認してください。</p>
+        <p style="color:#6b7280; font-size:12px;">
+          ※ このアラートはAI分析による参考情報です。医療診断ではありません。
+          ペットの健康に不安がある場合は、獣医師にご相談ください。
+        </p>
+      </div>
+    `,
+  };
+}
+
 export function buildReminderEmailHtml(petName: string, locale: "ja" | "en" = "ja"): string {
   if (locale === "en") {
     return `

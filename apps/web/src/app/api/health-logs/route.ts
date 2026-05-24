@@ -5,6 +5,7 @@ import { computeBaselines } from "@/lib/ai/baselines";
 import { detectAnomalies } from "@/lib/ai/anomaly-detection";
 import type { HealthLog } from "@/lib/ai/health-score";
 import { rateLimit } from "@/lib/rate-limit";
+import { cache } from "@/lib/cache";
 import { logger } from "@/lib/logger";
 import { trackEvent, EVENTS } from "@/lib/analytics";
 
@@ -105,6 +106,9 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Invalidate cached health scores for this pet so next request recomputes
+  cache.invalidatePrefix(`health-score:${parsed.data.pet_id}`);
 
   logger.info("health_log_submitted", {
     pet_id: parsed.data.pet_id,

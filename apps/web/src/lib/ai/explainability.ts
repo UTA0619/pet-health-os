@@ -1,5 +1,6 @@
 import { filterMedicalDiagnoses } from "@/lib/ai/guardrails";
 import { logger } from "@/lib/logger";
+import { getPrompt, PROMPT_VERSION } from "./prompts";
 
 // ---------------------------------------------------------------------------
 // In-memory cache with 24h TTL
@@ -63,8 +64,7 @@ export async function generateExplanation(
     return fallback;
   }
 
-  const systemPrompt =
-    "あなたはペット健康アシスタントです。このアドバイスは獣医学的診断ではありません。";
+  const systemPrompt = getPrompt("HEALTH_SCORE_EXPLAINER");
 
   const userPrompt =
     `In 1 warm sentence in Japanese, explain why ${petName}'s ${metric} score is ${score}/100 ` +
@@ -101,7 +101,7 @@ export async function generateExplanation(
 
     setCached(cacheKey, explanation);
 
-    logger.info("explainability_generated", { petId, metric, score });
+    logger.info("explainability_generated", { petId, metric, score, promptVersion: PROMPT_VERSION.HEALTH_SCORE_EXPLAINER });
 
     return explanation;
   } catch (error) {

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
-import { computeHealthScore, type HealthLog } from "@/lib/ai/health-score";
+import { computeHealthScore, type HealthLog, type ScoreResult } from "@/lib/ai/health-score";
 import { computeConfidence, confidenceLabel } from "@/lib/ai/confidence";
+import { cache, CACHE_TTL } from "@/lib/cache";
 
 export async function GET(request: NextRequest) {
   const supabase = await createServerClient();
@@ -26,6 +27,11 @@ export async function GET(request: NextRequest) {
 
   if (!pet) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const cacheKey = `health-score:${petId}:${dateStr}`;
+  const cached = cache.get<ScoreResult & { confidence: number; confidenceLabel: string }>(cacheKey);
+  if (cached) return NextResponse.json(cached);
+
   const { data: logsRaw } = await supabase
     .from("health_logs")
     .select("log_date,activity_level,appetite,stool_quality,coat_condition,eye_clarity,energy_level")
@@ -39,9 +45,11 @@ export async function GET(request: NextRequest) {
   if (!score) return NextResponse.json({ noData: true }, { status: 200 });
 
   const confidenceScore = computeConfidence(logs, baselineAgeDays);
-  return NextResponse.json({
+  const result = {
     ...score,
     confidence: confidenceScore,
     confidenceLabel: confidenceLabel(confidenceScore),
-  });
+  };
+  cache.set(cacheKey, result, CACHE_TTL.HEALTH_SCORE);
+  return NextResponse.json(result);
 }

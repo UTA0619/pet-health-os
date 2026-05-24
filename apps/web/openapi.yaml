@@ -1,0 +1,614 @@
+openapi: 3.1.0
+info:
+  title: Pet Health OS API
+  version: 1.0.0
+  description: |
+    AI-native predictive pet health platform API.
+    All authenticated endpoints require a Supabase JWT in the Authorization header.
+  contact:
+    name: Pet Health OS Engineering
+servers:
+  - url: https://web-utastudents-projects.vercel.app
+    description: Production
+  - url: http://localhost:3000
+    description: Local development
+
+security:
+  - BearerAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+
+    Pet:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        owner_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        species:
+          type: string
+          enum: [dog, cat, bird, rabbit, other]
+        breed:
+          type: string
+          nullable: true
+        date_of_birth:
+          type: string
+          format: date
+          nullable: true
+        weight_kg:
+          type: number
+          nullable: true
+        photo_url:
+          type: string
+          nullable: true
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+      required: [id, owner_id, name, species, is_active]
+
+    HealthLog:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        pet_id:
+          type: string
+          format: uuid
+        log_date:
+          type: string
+          format: date
+        activity_level:
+          type: integer
+          minimum: 1
+          maximum: 5
+          nullable: true
+        appetite:
+          type: integer
+          minimum: 1
+          maximum: 5
+          nullable: true
+        stool_quality:
+          type: integer
+          minimum: 1
+          maximum: 5
+          nullable: true
+        coat_condition:
+          type: integer
+          minimum: 1
+          maximum: 5
+          nullable: true
+        eye_clarity:
+          type: integer
+          minimum: 1
+          maximum: 5
+          nullable: true
+        energy_level:
+          type: integer
+          minimum: 1
+          maximum: 5
+          nullable: true
+        notes:
+          type: string
+          maxLength: 500
+          nullable: true
+      required: [pet_id, log_date]
+
+    HealthScore:
+      type: object
+      properties:
+        score:
+          type: number
+          minimum: 0
+          maximum: 100
+        components:
+          type: object
+          additionalProperties:
+            type: number
+        trend:
+          type: string
+          enum: [improving, stable, declining]
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+        confidenceLabel:
+          type: string
+          enum: ["高", "中", "低"]
+        explanation:
+          type: string
+          nullable: true
+
+    AnomalyDetection:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        pet_id:
+          type: string
+          format: uuid
+        detected_at:
+          type: string
+          format: date-time
+        anomaly_type:
+          type: string
+        severity:
+          type: string
+          enum: [MILD, MODERATE, SEVERE]
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+        affected_metrics:
+          type: object
+        alert_sent:
+          type: boolean
+        resolved_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    CameraAnalysis:
+      type: object
+      properties:
+        coat_condition:
+          type: string
+        eye_clarity:
+          type: string
+        posture:
+          type: string
+        mobility:
+          type: string
+        visible_concerns:
+          type: array
+          items:
+            type: string
+        confidence:
+          type: number
+        recommendations:
+          type: array
+          items:
+            type: string
+        requires_vet_attention:
+          type: boolean
+
+paths:
+  /api/health:
+    get:
+      summary: Health check
+      security: []
+      responses:
+        '200':
+          description: Service status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  timestamp:
+                    type: string
+
+  /api/pets:
+    get:
+      summary: List all active pets for the authenticated user
+      responses:
+        '200':
+          description: List of pets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Pet'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Create a new pet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                species:
+                  type: string
+                breed:
+                  type: string
+                date_of_birth:
+                  type: string
+                  format: date
+                weight_kg:
+                  type: number
+                photo_url:
+                  type: string
+              required: [name, species]
+      responses:
+        '201':
+          description: Created pet
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/pets/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    patch:
+      summary: Update a pet
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                breed:
+                  type: string
+                date_of_birth:
+                  type: string
+                weight_kg:
+                  type: number
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: Updated pet
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    delete:
+      summary: Soft-delete (archive) a pet
+      responses:
+        '200':
+          description: Pet archived
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/health-logs:
+    get:
+      summary: Get health logs for a pet
+      parameters:
+        - name: pet_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 30
+            maximum: 90
+      responses:
+        '200':
+          description: List of health logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HealthLog'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Submit a health log (upsert — one per pet per day)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HealthLog'
+      responses:
+        '200':
+          description: Log submitted, triggers async health score computation
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /api/health-score:
+    get:
+      summary: Get health score for a pet
+      parameters:
+        - name: pet_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: baseline_age_days
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Health score with confidence
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthScore'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/camera/analyze:
+    post:
+      summary: Analyze a pet photo with GPT-4o Vision
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                pet_id:
+                  type: string
+                  format: uuid
+                image_url:
+                  type: string
+              required: [pet_id, image_url]
+      responses:
+        '200':
+          description: Camera analysis result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CameraAnalysis'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /api/notifications/list:
+    get:
+      summary: Get anomaly alert notifications for the authenticated user
+      responses:
+        '200':
+          description: List of notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AnomalyDetection'
+
+  /api/notifications/read/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      summary: Mark a notification as read (sets alert_sent=true)
+      responses:
+        '200':
+          description: Marked as read
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/referral:
+    get:
+      summary: Get referral code and stats for the authenticated user
+      responses:
+        '200':
+          description: Referral info
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  url:
+                    type: string
+                  count:
+                    type: integer
+    post:
+      summary: Attribute a referral to a new user
+      security: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                newUserId:
+                  type: string
+                referralCode:
+                  type: string
+              required: [newUserId, referralCode]
+      responses:
+        '200':
+          description: Referral attributed
+        '404':
+          description: Invalid referral code
+
+  /api/account/delete:
+    post:
+      summary: Delete account and all associated data (GDPR)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                confirmation:
+                  type: string
+                  enum: ["DELETE MY ACCOUNT"]
+              required: [confirmation]
+      responses:
+        '200':
+          description: Account deleted
+        '422':
+          description: Invalid confirmation string
+
+  /api/account/export:
+    get:
+      summary: Export all user data as JSON (GDPR data portability)
+      responses:
+        '200':
+          description: JSON data export
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /api/auth/rate-limit-check:
+    post:
+      summary: Check auth rate limit before attempting sign-in/up
+      security: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                route:
+                  type: string
+                  enum: [sign-in, sign-up, password-reset]
+              required: [route]
+      responses:
+        '200':
+          description: Request allowed
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /api/push/subscribe:
+    post:
+      summary: Register a push notification token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+                platform:
+                  type: string
+                  enum: [ios, android, web]
+      responses:
+        '200':
+          description: Token registered
+    delete:
+      summary: Remove a push notification token
+      responses:
+        '200':
+          description: Token removed
+
+  /api/cron/run-anomaly-detection:
+    get:
+      summary: Cron — run anomaly detection for all active pets (every 30 min)
+      security:
+        - CronSecret: []
+      responses:
+        '200':
+          description: Detection results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  checked:
+                    type: integer
+                  anomalies_found:
+                    type: integer
+                  inserted:
+                    type: integer
+
+  /api/cron/send-health-alerts:
+    get:
+      summary: Cron — send email alerts for unresolved anomalies (daily 8am)
+      security:
+        - CronSecret: []
+      responses:
+        '200':
+          description: Alert results
+
+  components:
+    responses:
+      Unauthorized:
+        description: Missing or invalid JWT
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Error'
+      Forbidden:
+        description: Insufficient permissions
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Error'
+      BadRequest:
+        description: Invalid request body
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Error'
+      RateLimited:
+        description: Rate limit exceeded
+        headers:
+          X-RateLimit-Limit:
+            schema:
+              type: integer
+          X-RateLimit-Remaining:
+            schema:
+              type: integer
+          Retry-After:
+            schema:
+              type: integer
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Error'
+    securitySchemes:
+      BearerAuth:
+        type: http
+        scheme: bearer
+        bearerFormat: JWT
+      CronSecret:
+        type: apiKey
+        in: header
+        name: Authorization

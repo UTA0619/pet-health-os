@@ -3,6 +3,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { sendReminderNotification, sendScoreNotification } from "@/lib/notifications";
 import { computeHealthScore } from "@/lib/ai/health-score";
 import { sendPushNotification } from "@/lib/push/sender";
+import { sendEmail, buildHealthAlertEmail } from "@/lib/notifications/email";
 
 export const maxDuration = 60;
 
@@ -101,5 +102,60 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({ reminders, scores });
+  // --- Anomaly alert emails ---
+  let anomalyAlertsSent = 0;
+
+  const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+  const { data: unsent } = await supabase
+    .from("anomaly_detections")
+    .select("id, pet_id, anomaly_type, severity")
+    .eq("alert_sent", false)
+    .gte("detected_at", oneDayAgo);
+
+  if (unsent?.length) {
+    for (const anomaly of unsent) {
+      // Get pet name and owner id
+      const { data: pet } = await supabase
+        .from("pets")
+        .select("name, owner_id")
+        .eq("id", anomaly.pet_id)
+        .single();
+
+      if (!pet) continue;
+
+      // Get owner profile (notification prefs + email)
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("notification_prefs")
+        .eq("id", pet.owner_id)
+        .single();
+
+      const notifPrefs = (profile?.notification_prefs ?? {}) as Record<string, unknown>;
+      if (notifPrefs.anomaly_alerts === false) {
+        // Mark sent to avoid re-processing
+        await supabase
+          .from("anomaly_detections")
+          .update({ alert_sent: true })
+          .eq("id", anomaly.id);
+        continue;
+      }
+
+      const { data: authUser } = await supabase.auth.admin.getUserById(pet.owner_id);
+      const ownerEmail = authUser?.user?.email ?? null;
+
+      if (ownerEmail) {
+        const { subject, html } = buildHealthAlertEmail(pet.name, anomaly.anomaly_type, anomaly.severity);
+        await sendEmail({ to: ownerEmail, subject, html });
+        anomalyAlertsSent++;
+      }
+
+      await supabase
+        .from("anomaly_detections")
+        .update({ alert_sent: true })
+        .eq("id", anomaly.id);
+    }
+  }
+
+  return NextResponse.json({ reminders, scores, sent: anomalyAlertsSent });
 }
