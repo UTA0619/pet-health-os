@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
+import { rateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
+import { trackEvent, EVENTS } from "@/lib/analytics";
 
 export const maxDuration = 30;
 
@@ -7,6 +10,43 @@ export async function POST(request: NextRequest) {
   const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // Check subscription tier for rate limit
+  const today = new Date().toISOString().slice(0, 10);
+  const { data: subscription } = await supabase
+    .from("subscriptions")
+    .select("tier")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  const isPro = subscription?.tier === "pro";
+  const dailyLimit = isPro ? 50 : 10;
+
+  const limitResult = await rateLimit(
+    `${user.id}:camera:${today}`,
+    dailyLimit,
+    24 * 60 * 60 * 1000
+  );
+
+  if (!limitResult.success) {
+    logger.warn("camera_analyze_rate_limited", {
+      user_id: user.id,
+      tier: isPro ? "pro" : "free",
+      reset_at: limitResult.resetAt,
+    });
+    return NextResponse.json(
+      { error: "Daily camera analysis limit reached", resetAt: limitResult.resetAt },
+      {
+        status: 429,
+        headers: {
+          "X-RateLimit-Limit": String(dailyLimit),
+          "X-RateLimit-Remaining": "0",
+          "X-RateLimit-Reset": String(Math.ceil(limitResult.resetAt / 1000)),
+          "Retry-After": String(Math.ceil((limitResult.resetAt - Date.now()) / 1000)),
+        },
+      }
+    );
+  }
 
   const formData = await request.formData();
   const petId = formData.get("pet_id") as string;
@@ -140,9 +180,22 @@ IMPORTANT:
       flagged_for_review: (analysis.confidence ?? 1) < 0.5,
     }).select().single();
 
+    logger.info("camera_scan_completed", {
+      user_id: user.id,
+      pet_id: petId,
+      confidence: analysis.confidence,
+      requires_vet_attention: analysis.requires_vet_attention,
+    });
+
+    trackEvent(EVENTS.CAMERA_SCAN_COMPLETED, {
+      pet_id: petId,
+      confidence: analysis.confidence,
+      requires_vet_attention: analysis.requires_vet_attention,
+    });
+
     return NextResponse.json({ analysis });
   } catch (error) {
-    console.error("Camera analysis error:", error);
+    logger.error("camera_analysis_error", { user_id: user.id, error: String(error) });
     return NextResponse.json({ error: "Analysis failed" }, { status: 500 });
   }
 }

@@ -1,13 +1,21 @@
 import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Switch } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Switch, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { supabase } from '../../lib/supabase';
+import {
+  registerForPushNotifications,
+  savePushToken,
+  removePushToken,
+  getNotificationPermissionStatus,
+} from '../../lib/notifications';
 
 export default function SettingsScreen() {
   const [email, setEmail] = useState('');
   const [plan, setPlan] = useState('free');
-  const [dailyReminder, setDailyReminder] = useState(true);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [permissionDenied, setPermissionDenied] = useState(false);
+  const [notificationLoading, setNotificationLoading] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -16,9 +24,50 @@ export default function SettingsScreen() {
       setEmail(user.email ?? '');
       const { data } = await supabase.from('subscriptions').select('plan,status').eq('user_id', user.id).single();
       if (data?.plan === 'pro' && data?.status !== 'cancelled') setPlan('pro');
+
+      // Check current notification permission state
+      const status = await getNotificationPermissionStatus();
+      setNotificationsEnabled(status === 'granted');
+      setPermissionDenied(status === 'denied');
     }
     load();
   }, []);
+
+  async function handleNotificationToggle(value: boolean) {
+    if (notificationLoading) return;
+    setNotificationLoading(true);
+    try {
+      if (value) {
+        const token = await registerForPushNotifications();
+        if (token) {
+          await savePushToken(token);
+          setNotificationsEnabled(true);
+          setPermissionDenied(false);
+        } else {
+          // Permission denied
+          setPermissionDenied(true);
+          Alert.alert(
+            '通知の許可が必要です',
+            '設定アプリから通知を許可してください。\n設定 → ペットヘルスOS → 通知',
+            [
+              { text: 'キャンセル', style: 'cancel' },
+              { text: '設定を開く', onPress: () => Linking.openSettings() },
+            ]
+          );
+        }
+      } else {
+        await removePushToken();
+        setNotificationsEnabled(false);
+      }
+    } catch (e) {
+      console.error('通知設定エラー:', e);
+      Alert.alert('エラー', '通知設定の変更に失敗しました');
+    } finally {
+      setNotificationLoading(false);
+    }
+  }
+
+  const isPro = plan === 'pro';
 
   async function handleSignOut() {
     Alert.alert('サインアウト', 'サインアウトしますか？', [
@@ -32,8 +81,6 @@ export default function SettingsScreen() {
       }
     ]);
   }
-
-  const isPro = plan === 'pro';
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -64,11 +111,19 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>通知</Text>
           <View style={[styles.row, styles.rowLast]}>
-            <Text style={styles.rowLabel}>毎日の健康リマインダー</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.rowLabel}>プッシュ通知</Text>
+              {permissionDenied && (
+                <TouchableOpacity onPress={() => Linking.openSettings()}>
+                  <Text style={styles.permissionHint}>設定から通知を許可してください →</Text>
+                </TouchableOpacity>
+              )}
+            </View>
             <Switch
-              value={dailyReminder}
-              onValueChange={setDailyReminder}
-              trackColor={{ true: '#10b981' }}
+              value={notificationsEnabled}
+              onValueChange={handleNotificationToggle}
+              disabled={notificationLoading}
+              trackColor={{ false: '#d4d4d8', true: '#10b981' }}
               thumbColor="#fff"
             />
           </View>
@@ -114,4 +169,5 @@ const styles = StyleSheet.create({
   upgradeBtnText: { color: '#fff', fontSize: 13, fontWeight: '700' },
   signOutBtn: { margin: 16, marginTop: 24, padding: 16, borderRadius: 14, borderWidth: 1.5, borderColor: '#fca5a5', alignItems: 'center', backgroundColor: '#fff' },
   signOutText: { fontSize: 16, fontWeight: '600', color: '#ef4444' },
+  permissionHint: { fontSize: 12, color: '#f59e0b', marginTop: 4 },
 });

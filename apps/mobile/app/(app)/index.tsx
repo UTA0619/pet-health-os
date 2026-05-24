@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import { supabase } from '../../lib/supabase';
 import type { Pet, HealthScore, HealthLog } from '../../lib/types';
 
@@ -84,6 +85,17 @@ export default function DashboardScreen() {
             <Text style={styles.greeting}>こんにちは 👋</Text>
             <Text style={styles.petName}>{pet?.name}の健康ダッシュボード</Text>
           </View>
+          <TouchableOpacity
+            style={styles.petMgmtBtn}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              router.push('/(app)/pets' as never);
+            }}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.petMgmtEmoji}>🐾</Text>
+            <Text style={styles.petMgmtLabel}>ペット管理</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Score Card */}
@@ -143,6 +155,9 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingBottom: 12 },
   greeting: { fontSize: 14, color: '#71717a' },
   petName: { fontSize: 20, fontWeight: '700', color: '#18181b' },
+  petMgmtBtn: { alignItems: 'center', backgroundColor: '#ecfdf5', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8 },
+  petMgmtEmoji: { fontSize: 20 },
+  petMgmtLabel: { fontSize: 11, color: '#065f46', fontWeight: '600', marginTop: 2 },
   scoreCard: { margin: 16, backgroundColor: '#fff', borderRadius: 20, padding: 20, alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 12, elevation: 3 },
   cardTitle: { fontSize: 15, fontWeight: '600', color: '#3f3f46', marginBottom: 16 },
   scoreCenter: { marginVertical: 8 },
