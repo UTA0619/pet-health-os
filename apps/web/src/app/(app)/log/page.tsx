@@ -143,23 +143,25 @@ export default function LogPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center justify-between gap-2" role="group" aria-label={`${METRIC_LABELS[metric]}のレベル選択`}>
                 {[1, 2, 3, 4, 5].map((v) => (
                   <button
                     key={v}
                     type="button"
+                    aria-label={`${METRIC_LABELS[metric]} ${v}: ${metricLabel(v)}`}
+                    aria-pressed={values[metric] === v}
                     onClick={() => {
                       setValues((prev) => ({ ...prev, [metric]: v }));
                       // Haptic feedback on mobile
                       if ("vibrate" in navigator) navigator.vibrate(10);
                     }}
-                    className={`flex-1 flex flex-col items-center gap-1 py-3 rounded-xl border-2 transition-all ${
+                    className={`flex-1 flex flex-col items-center gap-1 py-3 rounded-xl border-2 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
                       values[metric] === v
                         ? "border-emerald-500 bg-emerald-50"
                         : "border-zinc-100 hover:border-zinc-200"
                     }`}
                   >
-                    <span className="text-xl">{metricLabel(v).split(" ")[0]}</span>
+                    <span className="text-xl" aria-hidden="true">{metricLabel(v).split(" ")[0]}</span>
                     <span className="text-xs text-zinc-500">{v}</span>
                   </button>
                 ))}
@@ -177,14 +179,17 @@ export default function LogPage() {
           </CardHeader>
           <CardContent>
             <textarea
+              id="notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="気になること、特記事項など..."
               maxLength={500}
               rows={3}
+              aria-label="メモ（任意）"
+              aria-describedby="notes-count"
               className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 resize-none"
             />
-            <p className="text-xs text-zinc-400 text-right mt-1">{notes.length}/500</p>
+            <p id="notes-count" className="text-xs text-zinc-400 text-right mt-1">{notes.length}/500</p>
           </CardContent>
         </Card>
 

@@ -15,6 +15,7 @@ import { scoreToColor } from "@/lib/utils";
 import { TrendingUp, TrendingDown, Minus, AlertTriangle, Camera } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { AnimatedScore } from "@/components/animated-score";
 
 // Simple SVG sparkline — no recharts dependency
 function Sparkline({ values, color }: { values: number[]; color: string }) {
@@ -265,7 +266,7 @@ export default async function DashboardPage() {
       )}
 
       {/* Health Score Card */}
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden animate-fade-in-up">
         <CardContent className="pt-6">
           {score ? (
             <>
@@ -273,11 +274,10 @@ export default async function DashboardPage() {
                 <div>
                   <p className="text-sm text-zinc-500 mb-1">AIヘルススコア</p>
                   <div className="flex items-end gap-2">
-                    <span
+                    <AnimatedScore
+                      score={Math.round(score.overall)}
                       className={`text-6xl font-black tabular-nums ${scoreToColor(score.overall)}`}
-                    >
-                      {Math.round(score.overall)}
-                    </span>
+                    />
                     <span className="text-2xl text-zinc-400 mb-1">/100</span>
                   </div>
                   <div className="flex items-center gap-1.5 mt-2">
@@ -354,7 +354,7 @@ export default async function DashboardPage() {
       </Card>
 
       {/* Action Buttons */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 animate-fade-in-up">
         <Link
           href="/log"
           className={`flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-colors ${
@@ -370,9 +370,10 @@ export default async function DashboardPage() {
         </Link>
         <Link
           href="/camera"
-          className="flex flex-col items-center justify-center p-4 rounded-2xl border-2 border-zinc-200 hover:border-emerald-300 text-zinc-700 transition-colors"
+          className="flex flex-col items-center justify-center p-4 rounded-2xl border-2 border-zinc-200 hover:border-emerald-300 text-zinc-700 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          aria-label="カメラ診断"
         >
-          <Camera className="h-6 w-6 mb-1" />
+          <Camera className="h-6 w-6 mb-1" aria-hidden="true" />
           <span className="text-sm font-medium">カメラ診断</span>
         </Link>
       </div>
