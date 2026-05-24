@@ -1,14 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { computeHealthScore, type HealthLog } from "@/lib/ai/health-score";
+import { computeConfidence, confidenceLabel } from "@/lib/ai/confidence";
 
 export async function GET(request: NextRequest) {
   const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { searchParams } = new URL(request.url);
+  const searchParams = await Promise.resolve(request.nextUrl.searchParams);
   const petId = searchParams.get("pet_id");
+  const baselineAgeDaysParam = searchParams.get("baseline_age_days");
+  const baselineAgeDays = baselineAgeDaysParam !== null
+    ? Math.max(0, parseInt(baselineAgeDaysParam, 10) || 0)
+    : 0;
+
   if (!petId) return NextResponse.json({ error: "pet_id required" }, { status: 400 });
 
   const { data: pet } = await supabase
@@ -31,5 +37,11 @@ export async function GET(request: NextRequest) {
   const score = computeHealthScore(logs);
 
   if (!score) return NextResponse.json({ noData: true }, { status: 200 });
-  return NextResponse.json(score);
+
+  const confidenceScore = computeConfidence(logs, baselineAgeDays);
+  return NextResponse.json({
+    ...score,
+    confidence: confidenceScore,
+    confidenceLabel: confidenceLabel(confidenceScore),
+  });
 }

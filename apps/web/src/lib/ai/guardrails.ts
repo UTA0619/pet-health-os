@@ -19,13 +19,16 @@ const INJECTION_PATTERNS = [
 
 export function sanitizeUserInput(text: string): string {
   let sanitized = text
+    // Replace <script>...</script> blocks entirely (including content) before general strip
+    .replace(/<script[\s\S]*?<\/script>/gi, '[filtered]')
+    .replace(/<script[^>]*>/gi, '[filtered]')
     // Strip markdown formatting
     .replace(/#{1,6}\s/g, '')
     .replace(/\*{1,2}([^*]+)\*{1,2}/g, '$1')
     .replace(/_{1,2}([^_]+)_{1,2}/g, '$1')
     .replace(/`{1,3}[^`]*`{1,3}/g, '')
     .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-    // Strip HTML tags
+    // Strip remaining HTML tags
     .replace(/<[^>]+>/g, '')
     .trim();
 

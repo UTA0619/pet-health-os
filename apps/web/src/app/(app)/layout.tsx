@@ -4,6 +4,7 @@ import { AppNav } from "@/components/app-nav";
 import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
 import { PushPermissionBanner } from "@/components/push-permission";
 import { AnalyticsProvider } from "@/components/analytics-provider";
+import { ConsentBanner } from "@/components/consent-banner";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createServerClient();
@@ -18,6 +19,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <AppNav />
         <PwaInstallPrompt />
         <PushPermissionBanner />
+        <ConsentBanner />
       </div>
     </AnalyticsProvider>
   );
