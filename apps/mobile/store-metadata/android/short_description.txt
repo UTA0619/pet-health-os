@@ -1,0 +1,1 @@
+AI health monitoring for your pet. Daily score, camera scan, anomaly alerts.

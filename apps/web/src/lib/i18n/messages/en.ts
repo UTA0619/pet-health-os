@@ -17,6 +17,7 @@ export const en: Messages = {
     log: "Log",
     camera: "Scan",
     settings: "Settings",
+    account: "Account",
   },
   dashboard: {
     title: "Dashboard",

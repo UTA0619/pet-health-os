@@ -1,0 +1,12 @@
+Welcome to Pet Health OS v1.0.0!
+
+This is our first public release. Here's what's included:
+
+- AI daily health scoring: get a 0-100 health score for your pet every morning based on your logs
+- Camera health analysis: powered by GPT-4o Vision, scan your pet for visual health indicators in seconds
+- 30-day trend tracking: visualize your pet's health over time with rolling trend charts
+- Anomaly detection: automatic monitoring with push alerts when unusual patterns are detected
+- Multi-pet support: manage all your pets from a single account
+- Japanese and English language support
+
+Thank you for being an early supporter of Pet Health OS. We're just getting started — more features coming soon!

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, PlusSquare, Camera, Settings } from "lucide-react";
+import { Home, PlusSquare, Camera, Settings, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
 
@@ -15,6 +15,7 @@ export function AppNav() {
     { href: "/log", icon: PlusSquare, label: t.nav.log },
     { href: "/camera", icon: Camera, label: t.nav.camera },
     { href: "/settings", icon: Settings, label: t.nav.settings },
+    { href: "/account", icon: User, label: t.nav.account },
   ];
 
   return (

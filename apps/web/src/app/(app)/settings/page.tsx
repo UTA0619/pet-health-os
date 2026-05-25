@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { useI18n } from "@/lib/i18n";
-import { Mail, Phone, Bell, Globe, LogOut, ChevronRight } from "lucide-react";
+import { Mail, Phone, Bell, Globe, LogOut, ChevronRight, Download, Trash2 } from "lucide-react";
 
 export default function SettingsPage() {
   const supabase = createBrowserClient();
@@ -32,6 +32,7 @@ export default function SettingsPage() {
     reminder_hour: 20,
   });
   const [savingPrefs, setSavingPrefs] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -72,6 +73,26 @@ export default function SettingsPage() {
 
   function handleUpgrade() {
     router.push("/upgrade");
+  }
+
+  async function handleExport() {
+    setExporting(true);
+    try {
+      const res = await fetch('/api/account/export');
+      if (!res.ok) throw new Error('Export failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `pet-health-data-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('データをエクスポートしました');
+    } catch {
+      toast.error('エクスポートに失敗しました');
+    } finally {
+      setExporting(false);
+    }
   }
 
   async function handleSignOut() {
@@ -226,6 +247,30 @@ export default function SettingsPage() {
               <ChevronRight className="h-4 w-4 text-zinc-400" />
             </a>
           ))}
+        </CardContent>
+      </Card>
+
+      {/* Data Management */}
+      <Card>
+        <CardContent className="pt-5 space-y-3">
+          <h2 className="font-semibold text-zinc-900">データ管理</h2>
+          <Button
+            variant="outline"
+            className="w-full justify-start gap-2 text-zinc-700"
+            onClick={handleExport}
+            disabled={exporting}
+          >
+            <Download className="h-4 w-4" />
+            {exporting ? 'エクスポート中...' : 'データをエクスポート'}
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full justify-start gap-2 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+            onClick={() => router.push('/account/delete')}
+          >
+            <Trash2 className="h-4 w-4" />
+            アカウントを削除
+          </Button>
         </CardContent>
       </Card>
 

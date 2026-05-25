@@ -15,6 +15,7 @@ export const ja = {
     log: "記録",
     camera: "スキャン",
     settings: "設定",
+    account: "アカウント",
   },
   dashboard: {
     title: "ダッシュボード",

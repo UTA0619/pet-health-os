@@ -1,0 +1,57 @@
+Give your pet the health monitoring they deserve.
+
+Pet Health OS is an AI-powered health tracking app that helps you stay one step ahead of your pet's wellbeing. Using advanced computer vision and machine learning, the app turns your daily observations and your phone's camera into a comprehensive health picture — updated every single day.
+
+DAILY AI HEALTH SCORE
+
+Every day, Pet Health OS calculates a personalized health score from 0 to 100 for your pet. The score is built from your daily logs — covering appetite, energy, behavior, and more — and compared against your pet's individual baseline. At a glance, you know whether today is a good day or one that needs attention.
+
+CAMERA HEALTH SCAN
+
+Open the camera, point it at your pet, and let GPT-4o Vision analyze what it sees. The AI checks coat condition, eye clarity, posture, and body shape for signs of potential health issues — all in seconds. No wearable device required. No special hardware. Just your Android phone. Currently supports dogs, cats, rabbits, and birds.
+
+SMART ANOMALY DETECTION
+
+Most illness doesn't announce itself — it sneaks up through small, easy-to-miss changes. Pet Health OS monitors your pet's health patterns around the clock and sends a push notification the moment an anomaly is detected: a sudden drop in appetite, unusual lethargy, or any deviation from their established pattern. Early detection saves lives and saves money.
+
+30-DAY HEALTH TRENDS
+
+Review rolling 30-day charts that show exactly how your pet's health score has moved over time. Identify patterns, spot seasonal dips, and walk into your next vet appointment with a full data-driven health history ready to share.
+
+HOW IT WORKS
+
+1. Log — Answer a quick daily check-in (under 60 seconds) about your pet's appetite, energy, and behavior.
+2. Scan — Use the built-in camera scan for a visual health check powered by AI.
+3. Score — Receive your pet's daily health score and personalized insights immediately.
+
+WHO IT'S FOR
+
+Pet Health OS is built for owners who want to be proactive — not reactive — about their pet's health. Whether you have a puppy, a senior cat, or a small animal, the AI learns your pet's unique baseline and alerts you when something changes. It's like having a wellness consultant available 24/7.
+
+MULTI-PET SUPPORT
+
+Manage all your pets from one account. Each pet gets their own health profile, score history, and trend data.
+
+SHAREABLE VET REPORTS
+
+Generate and share a detailed health report before your veterinary appointment. Give your vet real data, not just memory.
+
+PRIVACY & DATA SECURITY
+
+Your data is protected with AES-256 encryption at rest and in transit. We do not sell your data, share it with advertisers, or use it for AI training without your explicit permission. You can delete your account and all associated data at any time, directly from the app.
+
+MEDICAL DISCLAIMER
+
+Pet Health OS is a wellness monitoring tool. It is not a substitute for professional veterinary care. All AI-generated scores and insights are for informational purposes only. For any health concerns, diagnosis, or treatment decisions, always consult a licensed veterinarian.
+
+FEATURES AT A GLANCE
+
+- Daily AI health score (0-100)
+- GPT-4o Vision camera health scan
+- Anomaly detection with push notifications
+- 30-day trend charts
+- Multi-pet support
+- Shareable vet-ready health reports
+- Japanese and English UI
+
+Download Pet Health OS and start monitoring what matters most.
