@@ -1,0 +1,14 @@
+{
+  "name": "@pet-health-os/ai",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./scoring": "./src/scoring.ts",
+    "./anomaly": "./src/anomaly.ts",
+    "./prompts": "./src/prompts/index.ts",
+    "./guardrails": "./src/guardrails.ts"
+  }
+}
