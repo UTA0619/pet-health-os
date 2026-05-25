@@ -61,6 +61,14 @@ export default function AppLayout() {
         name="pets"
         options={{ href: null }}
       />
+      <Tabs.Screen
+        name="privacy"
+        options={{ href: null }}
+      />
+      <Tabs.Screen
+        name="onboarding"
+        options={{ href: null }}
+      />
     </Tabs>
   );
 }

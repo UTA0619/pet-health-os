@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
-  RefreshControl, ActivityIndicator,
+  RefreshControl, ActivityIndicator, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -46,7 +46,7 @@ export default function DashboardScreen() {
       if (!user) return;
 
       const { data: pets } = await supabase.from('pets').select('id,name,species,photo_url').eq('owner_id', user.id).eq('is_active', true).limit(1).single();
-      if (!pets) { router.replace('/onboarding' as never); return; }
+      if (!pets) { router.replace('/(app)/onboarding' as never); return; }
       setPet(pets);
 
       const today = new Date().toISOString().split('T')[0];
@@ -61,6 +61,11 @@ export default function DashboardScreen() {
       setTodayLogged(!!todayLogData.data);
     } catch (e) {
       console.error(e);
+      Alert.alert(
+        'エラー',
+        'データの読み込みに失敗しました。インターネット接続を確認してください。',
+        [{ text: '再試行', onPress: load }]
+      );
     } finally {
       setLoading(false);
     }

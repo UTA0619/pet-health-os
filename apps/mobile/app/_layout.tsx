@@ -6,6 +6,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
 import * as Notifications from 'expo-notifications';
 import { setupNotifications } from '../lib/notifications';
+import { ErrorBoundary } from '../components/error-boundary';
 
 function RootLayoutNav() {
   const router = useRouter();
@@ -53,9 +54,11 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <StatusBar style="dark" />
-      <RootLayoutNav />
-    </GestureHandlerRootView>
+    <ErrorBoundary>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <StatusBar style="dark" />
+        <RootLayoutNav />
+      </GestureHandlerRootView>
+    </ErrorBoundary>
   );
 }

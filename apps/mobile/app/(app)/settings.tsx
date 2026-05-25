@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Switch, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import Constants from 'expo-constants';
 import { supabase } from '../../lib/supabase';
 import {
   registerForPushNotifications,
@@ -129,18 +130,33 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        {/* App Info */}
+        {/* Legal */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>アプリ情報</Text>
-          {[
-            { label: 'バージョン', value: '1.0.0' },
-            { label: 'サポート', value: 'support@pethealthos.com' },
-          ].map(({ label, value }) => (
-            <View key={label} style={styles.row}>
-              <Text style={styles.rowLabel}>{label}</Text>
-              <Text style={styles.rowValue}>{value}</Text>
-            </View>
-          ))}
+          <Text style={styles.sectionTitle}>法的情報</Text>
+          <TouchableOpacity
+            style={[styles.row, styles.rowLast]}
+            onPress={() => router.push('/(app)/privacy' as never)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.rowLabel}>プライバシーポリシー</Text>
+            <Text style={styles.rowChevron}>›</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* About */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>このアプリについて</Text>
+          <View style={styles.row}>
+            <Text style={styles.rowLabel}>バージョン</Text>
+            <Text style={styles.rowValue}>{Constants.expoConfig?.version ?? '1.0.0'}</Text>
+          </View>
+          <View style={[styles.row, styles.rowLast]}>
+            <Text style={styles.rowLabel}>サポート</Text>
+            <Text style={styles.rowValue}>support@pethealthos.com</Text>
+          </View>
+          <View style={styles.copyrightRow}>
+            <Text style={styles.copyrightText}>© 2026 Pet Health OS</Text>
+          </View>
         </View>
 
         {/* Sign Out */}
@@ -170,4 +186,7 @@ const styles = StyleSheet.create({
   signOutBtn: { margin: 16, marginTop: 24, padding: 16, borderRadius: 14, borderWidth: 1.5, borderColor: '#fca5a5', alignItems: 'center', backgroundColor: '#fff' },
   signOutText: { fontSize: 16, fontWeight: '600', color: '#ef4444' },
   permissionHint: { fontSize: 12, color: '#f59e0b', marginTop: 4 },
+  rowChevron: { fontSize: 20, color: '#d4d4d8', fontWeight: '300' },
+  copyrightRow: { paddingHorizontal: 16, paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#f4f4f5' },
+  copyrightText: { fontSize: 12, color: '#a1a1aa', textAlign: 'center' },
 });
