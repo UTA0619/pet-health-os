@@ -53,13 +53,5 @@
       "source": "/api/health",
       "destination": "/api/health"
     }
-  ],
-  "functions": {
-    "apps/web/app/api/**/*.ts": {
-      "maxDuration": 30
-    },
-    "apps/web/app/api/ai/**/*.ts": {
-      "maxDuration": 60
-    }
-  }
+  ]
 }
