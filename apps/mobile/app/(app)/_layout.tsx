@@ -37,24 +37,28 @@ export default function AppLayout() {
         name="index"
         options={{
           tabBarIcon: ({ focused }) => <TabIcon emoji="🏠" label="ホーム" focused={focused} />,
+          tabBarAccessibilityLabel: 'Home / ホーム',
         }}
       />
       <Tabs.Screen
         name="log"
         options={{
           tabBarIcon: ({ focused }) => <TabIcon emoji="📝" label="記録" focused={focused} />,
+          tabBarAccessibilityLabel: 'Health log / 記録',
         }}
       />
       <Tabs.Screen
         name="camera"
         options={{
           tabBarIcon: ({ focused }) => <TabIcon emoji="📷" label="スキャン" focused={focused} />,
+          tabBarAccessibilityLabel: 'AI camera scan / スキャン',
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
           tabBarIcon: ({ focused }) => <TabIcon emoji="⚙️" label="設定" focused={focused} />,
+          tabBarAccessibilityLabel: 'Settings / 設定',
         }}
       />
       <Tabs.Screen
@@ -67,6 +71,10 @@ export default function AppLayout() {
       />
       <Tabs.Screen
         name="onboarding"
+        options={{ href: null }}
+      />
+      <Tabs.Screen
+        name="terms"
         options={{ href: null }}
       />
     </Tabs>

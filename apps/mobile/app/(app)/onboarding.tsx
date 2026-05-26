@@ -8,20 +8,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { supabase } from '../../lib/supabase';
+import { useI18n } from '../../lib/i18n';
 
-const SPECIES = [
-  { value: 'dog', label: '🐶 犬' },
-  { value: 'cat', label: '🐱 猫' },
-  { value: 'rabbit', label: '🐰 うさぎ' },
-  { value: 'bird', label: '🐦 鳥' },
-  { value: 'other', label: '🐾 その他' },
-] as const;
-
-type Species = typeof SPECIES[number]['value'];
+const SPECIES_VALUES = ['dog', 'cat', 'rabbit', 'bird', 'other'] as const;
+type Species = typeof SPECIES_VALUES[number];
 
 type Step = 'welcome' | 'pet-info' | 'done';
 
 export default function OnboardingScreen() {
+  const { t } = useI18n();
   const [step, setStep] = useState<Step>('welcome');
 
   // Pet form state
@@ -33,7 +28,7 @@ export default function OnboardingScreen() {
 
   async function handleCreatePet() {
     if (!name.trim()) {
-      Alert.alert('入力エラー', 'ペットの名前を入力してください');
+      Alert.alert(t.onboarding.inputError, t.onboarding.nameRequired2);
       return;
     }
     setLoading(true);
@@ -56,8 +51,8 @@ export default function OnboardingScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setStep('done');
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'エラーが発生しました';
-      Alert.alert('エラー', msg);
+      const msg = e instanceof Error ? e.message : t.onboarding.error;
+      Alert.alert(t.onboarding.error, msg);
     } finally {
       setLoading(false);
     }
@@ -69,18 +64,15 @@ export default function OnboardingScreen() {
       <SafeAreaView style={styles.safe}>
         <View style={styles.welcomeContainer}>
           <Text style={styles.heroEmoji}>🐾</Text>
-          <Text style={styles.heroTitle}>Pet Health OSへ{'\n'}ようこそ</Text>
-          <Text style={styles.heroSubtitle}>
-            AIがあなたのペットの健康を毎日見守ります。{'\n'}
-            体調の変化を早期発見し、大切な家族を守りましょう。
-          </Text>
+          <Text style={styles.heroTitle}>{t.onboarding.heroTitle}</Text>
+          <Text style={styles.heroSubtitle}>{t.onboarding.heroSubtitle}</Text>
 
           <View style={styles.featureList}>
             {[
-              { emoji: '📊', text: 'AIが毎日の健康スコアを算出' },
-              { emoji: '🚨', text: '異常を検知したらすぐにお知らせ' },
-              { emoji: '📷', text: 'カメラで見た目の健康チェック' },
-              { emoji: '📈', text: '30日間のトレンドを分析' },
+              { emoji: '📊', text: t.onboarding.feature1 },
+              { emoji: '🚨', text: t.onboarding.feature2 },
+              { emoji: '📷', text: t.onboarding.feature3 },
+              { emoji: '📈', text: t.onboarding.feature4 },
             ].map((f) => (
               <View key={f.emoji} style={styles.featureRow}>
                 <Text style={styles.featureEmoji}>{f.emoji}</Text>
@@ -96,8 +88,10 @@ export default function OnboardingScreen() {
               setStep('pet-info');
             }}
             activeOpacity={0.85}
+            accessibilityLabel="Get started / はじめる"
+            accessibilityRole="button"
           >
-            <Text style={styles.primaryBtnText}>はじめる →</Text>
+            <Text style={styles.primaryBtnText}>{t.onboarding.start}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -124,19 +118,19 @@ export default function OnboardingScreen() {
               <View style={styles.progressDot} />
             </View>
 
-            <Text style={styles.formTitle}>ペットの情報を教えてください</Text>
-            <Text style={styles.formSubtitle}>後から変更できます</Text>
+            <Text style={styles.formTitle}>{t.onboarding.petInfo}</Text>
+            <Text style={styles.formSubtitle}>{t.onboarding.petInfoSub}</Text>
 
             {/* Name */}
             <View style={styles.fieldGroup}>
               <Text style={styles.label}>
-                名前 <Text style={styles.required}>*</Text>
+                {t.onboarding.name} <Text style={styles.required}>{t.onboarding.nameRequired}</Text>
               </Text>
               <TextInput
                 style={styles.input}
                 value={name}
                 onChangeText={setName}
-                placeholder="例: ポチ"
+                placeholder={t.onboarding.namePlaceholder}
                 placeholderTextColor="#a1a1aa"
                 returnKeyType="next"
                 maxLength={50}
@@ -145,35 +139,41 @@ export default function OnboardingScreen() {
 
             {/* Species */}
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>種類</Text>
+              <Text style={styles.label}>{t.onboarding.species}</Text>
               <View style={styles.speciesGrid}>
-                {SPECIES.map((s) => (
-                  <TouchableOpacity
-                    key={s.value}
-                    style={[
-                      styles.speciesBtn,
-                      species === s.value && styles.speciesBtnActive,
-                    ]}
-                    onPress={() => {
-                      Haptics.selectionAsync();
-                      setSpecies(s.value);
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.speciesBtnText}>{s.label}</Text>
-                  </TouchableOpacity>
-                ))}
+                {SPECIES_VALUES.map((val) => {
+                  const labelKey = `species_${val}` as keyof typeof t.onboarding;
+                  return (
+                    <TouchableOpacity
+                      key={val}
+                      style={[
+                        styles.speciesBtn,
+                        species === val && styles.speciesBtnActive,
+                      ]}
+                      onPress={() => {
+                        Haptics.selectionAsync();
+                        setSpecies(val);
+                      }}
+                      activeOpacity={0.7}
+                      accessibilityLabel={String(t.onboarding[labelKey])}
+                      accessibilityRole="radio"
+                      accessibilityState={{ selected: species === val }}
+                    >
+                      <Text style={styles.speciesBtnText}>{String(t.onboarding[labelKey])}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             </View>
 
             {/* Breed */}
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>品種（任意）</Text>
+              <Text style={styles.label}>{t.onboarding.breed}</Text>
               <TextInput
                 style={styles.input}
                 value={breed}
                 onChangeText={setBreed}
-                placeholder="例: トイプードル"
+                placeholder={t.onboarding.breedPlaceholder}
                 placeholderTextColor="#a1a1aa"
                 returnKeyType="next"
                 maxLength={100}
@@ -182,12 +182,12 @@ export default function OnboardingScreen() {
 
             {/* Weight */}
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>体重 kg（任意）</Text>
+              <Text style={styles.label}>{t.onboarding.weight}</Text>
               <TextInput
                 style={styles.input}
                 value={weightKg}
                 onChangeText={setWeightKg}
-                placeholder="例: 3.5"
+                placeholder={t.onboarding.weightPlaceholder}
                 placeholderTextColor="#a1a1aa"
                 keyboardType="decimal-pad"
                 returnKeyType="done"
@@ -200,11 +200,14 @@ export default function OnboardingScreen() {
               onPress={handleCreatePet}
               disabled={loading}
               activeOpacity={0.85}
+              accessibilityLabel={loading ? "Registering / 登録中" : "Register pet / ペットを登録する"}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: loading }}
             >
               {loading ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={styles.primaryBtnText}>ペットを登録する</Text>
+                <Text style={styles.primaryBtnText}>{t.onboarding.register}</Text>
               )}
             </TouchableOpacity>
 
@@ -220,11 +223,10 @@ export default function OnboardingScreen() {
     <SafeAreaView style={styles.safe}>
       <View style={styles.doneContainer}>
         <Text style={styles.doneEmoji}>🎉</Text>
-        <Text style={styles.doneTitle}>登録完了！</Text>
+        <Text style={styles.doneTitle}>{t.onboarding.doneTitle}</Text>
         <Text style={styles.doneSubtitle}>
           <Text style={styles.donePetName}>{name}</Text>
-          の健康管理を始めましょう。{'\n'}
-          毎日の記録でAIスコアが更新されます。
+          {t.onboarding.doneSub}
         </Text>
 
         <TouchableOpacity
@@ -234,8 +236,10 @@ export default function OnboardingScreen() {
             router.replace('/(app)' as never);
           }}
           activeOpacity={0.85}
+          accessibilityLabel="Go to dashboard / ダッシュボードへ"
+          accessibilityRole="button"
         >
-          <Text style={styles.primaryBtnText}>ダッシュボードへ →</Text>
+          <Text style={styles.primaryBtnText}>{t.onboarding.toDashboard}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

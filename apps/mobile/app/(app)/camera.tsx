@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../../lib/supabase';
+import { useI18n } from '../../lib/i18n';
 
 type AnalysisResult = {
   coat_condition: string; eye_clarity: string; posture: string;
@@ -12,6 +13,7 @@ type AnalysisResult = {
 };
 
 export default function CameraScreen() {
+  const { t, locale } = useI18n();
   const [permission, requestPermission] = useCameraPermissions();
   const [petId, setPetId] = useState<string | null>(null);
   const [petName, setPetName] = useState('');
@@ -52,7 +54,7 @@ export default function CameraScreen() {
       const { data: { session } } = await supabase.auth.getSession();
       const formData = new FormData();
       formData.append('pet_id', petId);
-      formData.append('locale', 'ja');
+      formData.append('locale', locale);
       formData.append('file', { uri: photo, name: 'photo.jpg', type: 'image/jpeg' } as never);
       const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/camera/analyze`, {
         method: 'POST',
@@ -63,7 +65,7 @@ export default function CameraScreen() {
       const { analysis } = await res.json();
       setResult(analysis);
     } catch {
-      Alert.alert('エラー', '分析に失敗しました。もう一度お試しください。');
+      Alert.alert(t.camera.error, t.camera.analysisError);
     } finally {
       setAnalyzing(false);
     }
@@ -74,10 +76,10 @@ export default function CameraScreen() {
       <View style={styles.cameraContainer}>
         <CameraView style={styles.camera} facing="back" ref={cameraRef}>
           <View style={styles.cameraControls}>
-            <TouchableOpacity style={styles.closeBtn} onPress={() => setShowCamera(false)}>
+            <TouchableOpacity style={styles.closeBtn} onPress={() => setShowCamera(false)} accessibilityLabel="Close camera / カメラを閉じる" accessibilityRole="button">
               <Text style={styles.closeBtnText}>✕</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.shutterBtn} onPress={takePhoto} />
+            <TouchableOpacity style={styles.shutterBtn} onPress={takePhoto} accessibilityLabel="Take photo / 写真を撮影" accessibilityRole="button" />
           </View>
         </CameraView>
       </View>
@@ -88,18 +90,18 @@ export default function CameraScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView style={styles.scroll}>
         <View style={styles.header}>
-          <Text style={styles.title}>AIカメラスキャン</Text>
-          <Text style={styles.subtitle}>{petName || 'ペット'}の写真でAI健康チェック</Text>
+          <Text style={styles.title}>{t.camera.title}</Text>
+          <Text style={styles.subtitle}>{petName || t.camera.noPet}</Text>
         </View>
 
         {!photo ? (
           <View style={styles.uploadArea}>
             <Text style={styles.uploadEmoji}>📷</Text>
-            <Text style={styles.uploadTitle}>写真を選択またはカメラで撮影</Text>
-            <Text style={styles.uploadHint}>JPG, PNG（最大20MB）</Text>
+            <Text style={styles.uploadTitle}>{t.camera.takePhoto} / {t.camera.fromLibrary}</Text>
+            <Text style={styles.uploadHint}>JPG, PNG</Text>
             <View style={styles.uploadButtons}>
-              <TouchableOpacity style={styles.uploadBtn} onPress={pickFromLibrary} activeOpacity={0.8}>
-                <Text style={styles.uploadBtnText}>📁 ライブラリ</Text>
+              <TouchableOpacity style={styles.uploadBtn} onPress={pickFromLibrary} activeOpacity={0.8} accessibilityLabel="Choose from library / ライブラリから選択" accessibilityRole="button">
+                <Text style={styles.uploadBtnText}>📁 {t.camera.fromLibrary}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.uploadBtn, styles.uploadBtnPrimary]}
@@ -108,8 +110,10 @@ export default function CameraScreen() {
                   setShowCamera(true);
                 }}
                 activeOpacity={0.8}
+                accessibilityLabel="Take photo / 写真を撮影"
+                accessibilityRole="button"
               >
-                <Text style={[styles.uploadBtnText, styles.uploadBtnTextPrimary]}>📷 カメラ</Text>
+                <Text style={[styles.uploadBtnText, styles.uploadBtnTextPrimary]}>📷 {t.camera.takePhoto}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -118,14 +122,17 @@ export default function CameraScreen() {
             <Image source={{ uri: photo }} style={styles.preview} />
             {!result && (
               <View style={styles.previewActions}>
-                <TouchableOpacity style={styles.retakeBtn} onPress={() => { setPhoto(null); setResult(null); }}>
-                  <Text style={styles.retakeBtnText}>やり直す</Text>
+                <TouchableOpacity style={styles.retakeBtn} onPress={() => { setPhoto(null); setResult(null); }} accessibilityLabel="Retake photo / 撮り直す" accessibilityRole="button">
+                  <Text style={styles.retakeBtnText}>{t.camera.retake}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.analyzeBtn, analyzing && styles.analyzeBtnDisabled]}
                   onPress={analyze} disabled={analyzing} activeOpacity={0.8}
+                  accessibilityLabel={analyzing ? "Analyzing / 分析中" : "Start AI analysis / AI分析を開始"}
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: analyzing }}
                 >
-                  {analyzing ? <ActivityIndicator color="#fff" /> : <Text style={styles.analyzeBtnText}>この写真で分析する</Text>}
+                  {analyzing ? <ActivityIndicator color="#fff" /> : <Text style={styles.analyzeBtnText}>{t.camera.analyze}</Text>}
                 </TouchableOpacity>
               </View>
             )}
@@ -137,8 +144,8 @@ export default function CameraScreen() {
             <View style={styles.resultHeader}>
               <Text style={styles.resultHeaderEmoji}>{result.requires_vet_attention ? '⚠️' : '✅'}</Text>
               <View>
-                <Text style={styles.resultTitle}>{result.requires_vet_attention ? '獣医師への相談を推奨' : '異常は検出されませんでした'}</Text>
-                <Text style={styles.resultConfidence}>信頼度: {Math.round(result.confidence * 100)}%</Text>
+                <Text style={styles.resultTitle}>{result.requires_vet_attention ? t.camera.vetAttention : t.camera.result}</Text>
+                <Text style={styles.resultConfidence}>{t.camera.confidence}: {Math.round(result.confidence * 100)}%</Text>
               </View>
             </View>
 
@@ -153,15 +160,15 @@ export default function CameraScreen() {
 
             {result.recommendations.length > 0 && (
               <View style={styles.recommendations}>
-                <Text style={styles.recommendationsTitle}>アドバイス</Text>
+                <Text style={styles.recommendationsTitle}>{t.camera.recommendations}</Text>
                 {result.recommendations.map((r, i) => (
                   <Text key={i} style={styles.recommendationItem}>• {r}</Text>
                 ))}
               </View>
             )}
 
-            <TouchableOpacity style={styles.retakeBtn} onPress={() => { setPhoto(null); setResult(null); }}>
-              <Text style={styles.retakeBtnText}>別の写真をスキャンする</Text>
+            <TouchableOpacity style={styles.retakeBtn} onPress={() => { setPhoto(null); setResult(null); }} accessibilityLabel="Retake photo / 撮り直す" accessibilityRole="button">
+              <Text style={styles.retakeBtnText}>{t.camera.retake}</Text>
             </TouchableOpacity>
           </View>
         )}

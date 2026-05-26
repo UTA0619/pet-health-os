@@ -5,21 +5,25 @@ import {
 } from 'react-native';
 import { Link, router } from 'expo-router';
 import { supabase } from '../../lib/supabase';
+import { useI18n } from '../../lib/i18n';
+import { useTheme } from '../../lib/theme';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const { t } = useI18n();
+  const { colors } = useTheme();
 
   async function handleLogin() {
     if (!email || !password) {
-      Alert.alert('エラー', 'メールアドレスとパスワードを入力してください');
+      Alert.alert(t.common.error, t.login.emailRequired);
       return;
     }
     setLoading(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) Alert.alert('ログインエラー', error.message);
+      if (error) Alert.alert(t.login.loginError, error.message);
       else router.replace('/(app)');
     } finally {
       setLoading(false);
@@ -27,35 +31,39 @@ export default function LoginScreen() {
   }
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+    <KeyboardAvoidingView style={[styles.container, { backgroundColor: colors.surface }]} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
           <Text style={styles.logo}>🐾</Text>
-          <Text style={styles.title}>Pet Health OS</Text>
-          <Text style={styles.subtitle}>AIによるペット健康管理</Text>
+          <Text style={styles.title}>{t.login.title}</Text>
+          <Text style={styles.subtitle}>{t.login.subtitle}</Text>
         </View>
 
         <View style={styles.form}>
-          <Text style={styles.label}>メールアドレス</Text>
+          <Text style={styles.label}>{t.login.email}</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { backgroundColor: colors.inputBg, color: colors.text, borderColor: colors.border }]}
             value={email}
             onChangeText={setEmail}
             placeholder="your@email.com"
-            placeholderTextColor="#a1a1aa"
+            placeholderTextColor={colors.textMuted}
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
+            accessibilityLabel="Email address / メールアドレス"
+            accessibilityHint="Enter your email address"
           />
 
-          <Text style={styles.label}>パスワード</Text>
+          <Text style={styles.label}>{t.login.password}</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { backgroundColor: colors.inputBg, color: colors.text, borderColor: colors.border }]}
             value={password}
             onChangeText={setPassword}
             placeholder="••••••••"
-            placeholderTextColor="#a1a1aa"
+            placeholderTextColor={colors.textMuted}
             secureTextEntry
+            accessibilityLabel="Password / パスワード"
+            accessibilityHint="Enter your password"
           />
 
           <TouchableOpacity
@@ -63,19 +71,32 @@ export default function LoginScreen() {
             onPress={handleLogin}
             disabled={loading}
             activeOpacity={0.8}
+            accessibilityLabel={loading ? "Logging in / ログイン中" : "Log in / ログイン"}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: loading }}
           >
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.buttonText}>ログイン</Text>
+              <Text style={styles.buttonText}>{t.login.loginBtn}</Text>
             )}
           </TouchableOpacity>
 
+          <TouchableOpacity
+            style={styles.forgotPassword}
+            onPress={() => router.push('/(auth)/forgot-password' as never)}
+            activeOpacity={0.7}
+            accessibilityLabel="Forgot password / パスワードを忘れた"
+            accessibilityRole="button"
+          >
+            <Text style={styles.forgotPasswordText}>{t.login.forgotPassword}</Text>
+          </TouchableOpacity>
+
           <View style={styles.footer}>
-            <Text style={styles.footerText}>アカウントをお持ちでない方は</Text>
+            <Text style={styles.footerText}>{t.login.noAccount}</Text>
             <Link href="/(auth)/signup" asChild>
-              <TouchableOpacity>
-                <Text style={styles.link}>新規登録</Text>
+              <TouchableOpacity accessibilityLabel="Sign up / 新規登録" accessibilityRole="link">
+                <Text style={styles.link}>{t.login.signup}</Text>
               </TouchableOpacity>
             </Link>
           </View>
@@ -104,6 +125,8 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: { opacity: 0.6 },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  forgotPassword: { alignItems: 'center', marginTop: 12 },
+  forgotPasswordText: { fontSize: 14, color: '#71717a' },
   footer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 20, gap: 6 },
   footerText: { fontSize: 14, color: '#71717a' },
   link: { fontSize: 14, color: '#10b981', fontWeight: '600' },

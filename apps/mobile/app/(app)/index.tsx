@@ -1,21 +1,25 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
-  RefreshControl, ActivityIndicator, Alert,
+  RefreshControl, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { supabase } from '../../lib/supabase';
 import type { Pet, HealthScore, HealthLog } from '../../lib/types';
+import { useTheme } from '../../lib/theme';
+import { DashboardSkeleton } from '../../components/dashboard-skeleton';
+import { useI18n } from '../../lib/i18n';
 
 function ScoreCircle({ score, trend }: { score: number; trend: string }) {
-  const color = score >= 80 ? '#10b981' : score >= 60 ? '#f59e0b' : '#ef4444';
+  const { colors } = useTheme();
+  const color = score >= 80 ? colors.scoreGreen : score >= 60 ? colors.scoreYellow : colors.scoreRed;
   const trendEmoji = trend === 'improving' ? '↑' : trend === 'declining' ? '↓' : '→';
   return (
-    <View style={[scoreStyles.circle, { borderColor: color }]}>
+    <View style={[scoreStyles.circle, { borderColor: color, backgroundColor: colors.surface }]}>
       <Text style={[scoreStyles.number, { color }]}>{score}</Text>
-      <Text style={scoreStyles.label}>/ 100</Text>
+      <Text style={[scoreStyles.label, { color: colors.textSecondary }]}>/ 100</Text>
       <Text style={scoreStyles.trend}>{trendEmoji}</Text>
     </View>
   );
@@ -25,14 +29,15 @@ const scoreStyles = StyleSheet.create({
   circle: {
     width: 160, height: 160, borderRadius: 80,
     borderWidth: 6, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#fff',
   },
   number: { fontSize: 48, fontWeight: '800' },
-  label: { fontSize: 14, color: '#71717a', marginTop: -4 },
+  label: { fontSize: 14, marginTop: -4 },
   trend: { fontSize: 20, marginTop: 4 },
 });
 
 export default function DashboardScreen() {
+  const { colors } = useTheme();
+  const { t } = useI18n();
   const [pet, setPet] = useState<Pet | null>(null);
   const [score, setScore] = useState<HealthScore | null>(null);
   const [logs, setLogs] = useState<HealthLog[]>([]);
@@ -62,9 +67,9 @@ export default function DashboardScreen() {
     } catch (e) {
       console.error(e);
       Alert.alert(
-        'エラー',
-        'データの読み込みに失敗しました。インターネット接続を確認してください。',
-        [{ text: '再試行', onPress: load }]
+        t.dashboard.error,
+        t.dashboard.loadError,
+        [{ text: t.dashboard.retry, onPress: load }]
       );
     } finally {
       setLoading(false);
@@ -79,66 +84,68 @@ export default function DashboardScreen() {
     setRefreshing(false);
   }, [load]);
 
-  if (loading) return <View style={styles.center}><ActivityIndicator size="large" color="#10b981" /></View>;
+  if (loading) return <DashboardSkeleton />;
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top']}>
       <ScrollView style={styles.scroll} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#10b981" />}>
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.greeting}>こんにちは 👋</Text>
-            <Text style={styles.petName}>{pet?.name}の健康ダッシュボード</Text>
+            <Text style={[styles.greeting, { color: colors.textSecondary }]}>{t.dashboard.greeting}</Text>
+            <Text style={[styles.petName, { color: colors.text }]}>{pet?.name}{t.dashboard.healthDashboard}</Text>
           </View>
           <TouchableOpacity
-            style={styles.petMgmtBtn}
+            style={[styles.petMgmtBtn, { backgroundColor: colors.primaryLight }]}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               router.push('/(app)/pets' as never);
             }}
             activeOpacity={0.7}
+            accessibilityLabel="Pet management / ペット管理"
+            accessibilityRole="button"
           >
             <Text style={styles.petMgmtEmoji}>🐾</Text>
-            <Text style={styles.petMgmtLabel}>ペット管理</Text>
+            <Text style={[styles.petMgmtLabel, { color: colors.primaryDark }]}>{t.dashboard.petManagement}</Text>
           </TouchableOpacity>
         </View>
 
         {/* Score Card */}
-        <View style={styles.scoreCard}>
+        <View style={[styles.scoreCard, { backgroundColor: colors.surface }]}>
           {score ? (
             <>
-              <Text style={styles.cardTitle}>今日の健康スコア</Text>
+              <Text style={[styles.cardTitle, { color: colors.textSecondary }]}>{t.dashboard.todayScore}</Text>
               <View style={styles.scoreCenter}>
                 <ScoreCircle score={Math.round(score.overall)} trend={score.trend} />
               </View>
-              {score.explanation && <Text style={styles.explanation}>{score.explanation}</Text>}
+              {score.explanation && <Text style={[styles.explanation, { color: colors.textSecondary }]}>{score.explanation}</Text>}
             </>
           ) : (
             <View style={styles.noScore}>
               <Text style={styles.noScoreEmoji}>📊</Text>
-              <Text style={styles.noScoreText}>健康記録を入力するとスコアが表示されます</Text>
+              <Text style={[styles.noScoreText, { color: colors.textSecondary }]}>{t.dashboard.noScore}</Text>
             </View>
           )}
         </View>
 
         {/* Today's log banner */}
         {!todayLogged && (
-          <TouchableOpacity style={styles.logBanner} onPress={() => router.push('/(app)/log' as never)} activeOpacity={0.8}>
-            <Text style={styles.logBannerText}>📝 今日の健康記録をつける →</Text>
+          <TouchableOpacity style={[styles.logBanner, { backgroundColor: colors.primaryLight, borderColor: colors.accent }]} onPress={() => router.push('/(app)/log' as never)} activeOpacity={0.8} accessibilityLabel="Log today's health / 今日の健康記録をつける" accessibilityRole="button">
+            <Text style={[styles.logBannerText, { color: colors.primaryDark }]}>{t.dashboard.logToday}</Text>
           </TouchableOpacity>
         )}
 
         {/* Recent Logs */}
         {logs.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>最近の記録</Text>
+          <View style={[styles.section, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>{t.dashboard.recentLogs}</Text>
             {logs.slice(0, 5).map((log) => (
-              <View key={log.id} style={styles.logRow}>
-                <Text style={styles.logDate}>{log.log_date}</Text>
+              <View key={log.id} style={[styles.logRow, { borderBottomColor: colors.background }]}>
+                <Text style={[styles.logDate, { color: colors.textSecondary }]}>{log.log_date}</Text>
                 <View style={styles.logMetrics}>
                   {(['activity_level', 'appetite', 'energy_level'] as const).map((k) => (
-                    <View key={k} style={styles.metricBadge}>
-                      <Text style={styles.metricValue}>{log[k]}</Text>
+                    <View key={k} style={[styles.metricBadge, { backgroundColor: colors.primaryLight }]}>
+                      <Text style={[styles.metricValue, { color: colors.primary }]}>{log[k]}</Text>
                     </View>
                   ))}
                 </View>
@@ -154,7 +161,7 @@ export default function DashboardScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#f4f4f5' },
+  safe: { flex: 1 },
   scroll: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingBottom: 12 },

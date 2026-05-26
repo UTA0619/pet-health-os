@@ -7,14 +7,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { supabase } from '../../lib/supabase';
-import { METRIC_LABELS, type MetricKey } from '../../lib/types';
+import { type MetricKey } from '../../lib/types';
+import { useI18n } from '../../lib/i18n';
 
-const METRICS = Object.keys(METRIC_LABELS) as MetricKey[];
+const METRIC_KEYS: MetricKey[] = ['activity_level', 'appetite', 'stool_quality', 'coat_condition', 'eye_clarity', 'energy_level'];
+const METRICS = METRIC_KEYS;
 const SCORE_EMOJI = ['', '😫', '😟', '😐', '🙂', '😊'];
 
 type Values = Record<MetricKey, number>;
 
 export default function LogScreen() {
+  const { t } = useI18n();
   const [petId, setPetId] = useState<string | null>(null);
   const [petName, setPetName] = useState('');
   const [values, setValues] = useState<Values>({
@@ -61,9 +64,9 @@ export default function LogScreen() {
       });
       if (!res.ok) throw new Error('Failed');
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert('✅ 保存しました', `${petName}の今日の健康記録を保存しました！`, [{ text: 'ホームへ', onPress: () => router.replace('/(app)') }]);
+      Alert.alert(t.log.success, t.log.successMsg, [{ text: 'Home', onPress: () => router.replace('/(app)') }]);
     } catch {
-      Alert.alert('エラー', '保存に失敗しました。もう一度お試しください。');
+      Alert.alert(t.log.error, t.log.saveError);
     } finally {
       setLoading(false);
     }
@@ -73,19 +76,19 @@ export default function LogScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView style={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
-          <Text style={styles.title}>{petName ? `${petName}の` : ''}今日の健康記録</Text>
-          <Text style={styles.subtitle}>各項目を1〜5で評価してください</Text>
+          <Text style={styles.title}>{petName ? `${petName} ${t.log.subtitle}` : t.log.title}</Text>
+          <Text style={styles.subtitle}>{t.log.each}</Text>
         </View>
 
         {todayLogged && (
           <View style={styles.alreadyLogged}>
-            <Text style={styles.alreadyLoggedText}>✅ 今日はすでに記録済みです。更新できます。</Text>
+            <Text style={styles.alreadyLoggedText}>✅ {t.log.alreadyLogged}</Text>
           </View>
         )}
 
         {METRICS.map((metric) => (
           <View key={metric} style={styles.card}>
-            <Text style={styles.metricLabel}>{METRIC_LABELS[metric]}</Text>
+            <Text style={styles.metricLabel}>{t.metrics[metric]}</Text>
             <View style={styles.ratingRow}>
               {[1, 2, 3, 4, 5].map((v) => (
                 <TouchableOpacity
@@ -93,6 +96,9 @@ export default function LogScreen() {
                   style={[styles.ratingBtn, values[metric] === v && styles.ratingBtnActive]}
                   onPress={() => setMetric(metric, v)}
                   activeOpacity={0.7}
+                  accessibilityLabel={`${t.metrics[metric]} ${v} / 5`}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: values[metric] === v }}
                 >
                   <Text style={styles.ratingEmoji}>{SCORE_EMOJI[v]}</Text>
                   <Text style={[styles.ratingNum, values[metric] === v && styles.ratingNumActive]}>{v}</Text>
@@ -104,12 +110,12 @@ export default function LogScreen() {
 
         {/* Notes */}
         <View style={styles.card}>
-          <Text style={styles.metricLabel}>メモ（任意）</Text>
+          <Text style={styles.metricLabel}>{t.log.notes}</Text>
           <TextInput
             style={styles.textarea}
             value={notes}
             onChangeText={setNotes}
-            placeholder="気になること、特記事項など..."
+            placeholder={t.log.notesPlaceholder}
             placeholderTextColor="#a1a1aa"
             multiline
             numberOfLines={3}
@@ -123,8 +129,11 @@ export default function LogScreen() {
           onPress={handleSubmit}
           disabled={loading}
           activeOpacity={0.8}
+          accessibilityLabel={loading ? "Saving / 保存中" : "Save health log / 記録を保存する"}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: loading }}
         >
-          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitText}>記録を保存してスコアを計算</Text>}
+          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitText}>{t.log.submit}</Text>}
         </TouchableOpacity>
 
         <View style={{ height: 32 }} />

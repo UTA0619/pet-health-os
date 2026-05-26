@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Switch, Li
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import Constants from 'expo-constants';
+import * as WebBrowser from 'expo-web-browser';
 import { supabase } from '../../lib/supabase';
 import {
   registerForPushNotifications,
@@ -10,8 +11,10 @@ import {
   removePushToken,
   getNotificationPermissionStatus,
 } from '../../lib/notifications';
+import { useI18n } from '../../lib/i18n';
 
 export default function SettingsScreen() {
+  const { t, locale, setLocale } = useI18n();
   const [email, setEmail] = useState('');
   const [plan, setPlan] = useState('free');
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
@@ -48,11 +51,11 @@ export default function SettingsScreen() {
           // Permission denied
           setPermissionDenied(true);
           Alert.alert(
-            '通知の許可が必要です',
-            '設定アプリから通知を許可してください。\n設定 → ペットヘルスOS → 通知',
+            t.settings.notifTitle,
+            t.settings.notifMsg,
             [
-              { text: 'キャンセル', style: 'cancel' },
-              { text: '設定を開く', onPress: () => Linking.openSettings() },
+              { text: t.common.cancel, style: 'cancel' },
+              { text: t.settings.openSettings, onPress: () => Linking.openSettings() },
             ]
           );
         }
@@ -61,8 +64,8 @@ export default function SettingsScreen() {
         setNotificationsEnabled(false);
       }
     } catch (e) {
-      console.error('通知設定エラー:', e);
-      Alert.alert('エラー', '通知設定の変更に失敗しました');
+      console.error('notification settings error:', e);
+      Alert.alert(t.settings.error, t.settings.notifError);
     } finally {
       setNotificationLoading(false);
     }
@@ -71,10 +74,10 @@ export default function SettingsScreen() {
   const isPro = plan === 'pro';
 
   async function handleSignOut() {
-    Alert.alert('サインアウト', 'サインアウトしますか？', [
-      { text: 'キャンセル', style: 'cancel' },
+    Alert.alert(t.settings.signOutTitle, t.settings.signOutMsg, [
+      { text: t.common.cancel, style: 'cancel' },
       {
-        text: 'サインアウト', style: 'destructive',
+        text: t.settings.signOut, style: 'destructive',
         onPress: async () => {
           await supabase.auth.signOut();
           router.replace('/(auth)/login');
@@ -86,23 +89,28 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView style={styles.scroll}>
-        <Text style={styles.pageTitle}>設定</Text>
+        <Text style={styles.pageTitle}>{t.settings.title}</Text>
 
         {/* Account */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>アカウント</Text>
+          <Text style={styles.sectionTitle}>{t.settings.account}</Text>
           <View style={styles.row}>
-            <Text style={styles.rowLabel}>メールアドレス</Text>
+            <Text style={styles.rowLabel}>{t.settings.emailLabel}</Text>
             <Text style={styles.rowValue}>{email}</Text>
           </View>
           <View style={[styles.row, styles.rowLast]}>
             <View>
-              <Text style={styles.rowLabel}>プラン</Text>
-              <Text style={[styles.rowValue, isPro && styles.proText]}>{isPro ? '🌟 Proプラン' : 'フリープラン'}</Text>
+              <Text style={styles.rowLabel}>{t.settings.plan}</Text>
+              <Text style={[styles.rowValue, isPro && styles.proText]}>{isPro ? t.settings.proPlan : t.settings.freePlan}</Text>
             </View>
             {!isPro && (
-              <TouchableOpacity style={styles.upgradeBtn} onPress={() => Alert.alert('アップグレード', `ブラウザで ${process.env.EXPO_PUBLIC_API_URL}/upgrade を開いてアップグレードしてください`)}>
-                <Text style={styles.upgradeBtnText}>アップグレード</Text>
+              <TouchableOpacity
+                style={styles.upgradeBtn}
+                onPress={async () => {
+                  await WebBrowser.openBrowserAsync(`${process.env.EXPO_PUBLIC_API_URL}/upgrade`);
+                }}
+              >
+                <Text style={styles.upgradeBtnText}>{t.settings.upgrade}</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -110,13 +118,13 @@ export default function SettingsScreen() {
 
         {/* Notifications */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>通知</Text>
+          <Text style={styles.sectionTitle}>{t.settings.notifications}</Text>
           <View style={[styles.row, styles.rowLast]}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.rowLabel}>プッシュ通知</Text>
+              <Text style={styles.rowLabel}>{t.settings.pushNotifications}</Text>
               {permissionDenied && (
                 <TouchableOpacity onPress={() => Linking.openSettings()}>
-                  <Text style={styles.permissionHint}>設定から通知を許可してください →</Text>
+                  <Text style={styles.permissionHint}>{t.settings.permissionHint}</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -132,36 +140,56 @@ export default function SettingsScreen() {
 
         {/* Legal */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>法的情報</Text>
+          <Text style={styles.sectionTitle}>{t.settings.legal}</Text>
           <TouchableOpacity
-            style={[styles.row, styles.rowLast]}
+            style={styles.row}
             onPress={() => router.push('/(app)/privacy' as never)}
             activeOpacity={0.7}
           >
-            <Text style={styles.rowLabel}>プライバシーポリシー</Text>
+            <Text style={styles.rowLabel}>{t.settings.privacyPolicy}</Text>
+            <Text style={styles.rowChevron}>›</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.row, styles.rowLast]}
+            onPress={() => router.push('/(app)/terms' as never)}
+            activeOpacity={0.7}
+            accessibilityLabel="Terms of Service / 利用規約"
+            accessibilityRole="button"
+          >
+            <Text style={styles.rowLabel}>{t.settings.termsOfService}</Text>
             <Text style={styles.rowChevron}>›</Text>
           </TouchableOpacity>
         </View>
 
         {/* About */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>このアプリについて</Text>
+          <Text style={styles.sectionTitle}>{t.settings.about}</Text>
           <View style={styles.row}>
-            <Text style={styles.rowLabel}>バージョン</Text>
+            <Text style={styles.rowLabel}>{t.settings.version}</Text>
             <Text style={styles.rowValue}>{Constants.expoConfig?.version ?? '1.0.0'}</Text>
           </View>
-          <View style={[styles.row, styles.rowLast]}>
-            <Text style={styles.rowLabel}>サポート</Text>
+          <View style={styles.row}>
+            <Text style={styles.rowLabel}>{t.settings.support}</Text>
             <Text style={styles.rowValue}>support@pethealthos.com</Text>
           </View>
+          <TouchableOpacity
+            style={[styles.row, styles.rowLast]}
+            onPress={() => setLocale(locale === 'ja' ? 'en' : 'ja')}
+            activeOpacity={0.7}
+            accessibilityLabel="Language / 言語"
+            accessibilityRole="button"
+          >
+            <Text style={styles.rowLabel}>{t.settings.language}</Text>
+            <Text style={styles.rowValue}>{locale === 'ja' ? '🇯🇵 日本語' : '🇺🇸 English'}</Text>
+          </TouchableOpacity>
           <View style={styles.copyrightRow}>
-            <Text style={styles.copyrightText}>© 2026 Pet Health OS</Text>
+            <Text style={styles.copyrightText}>{t.settings.copyright}</Text>
           </View>
         </View>
 
         {/* Sign Out */}
         <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut} activeOpacity={0.8}>
-          <Text style={styles.signOutText}>サインアウト</Text>
+          <Text style={styles.signOutText}>{t.settings.signOut}</Text>
         </TouchableOpacity>
 
         <View style={{ height: 32 }} />

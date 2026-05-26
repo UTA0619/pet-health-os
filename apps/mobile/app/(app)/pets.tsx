@@ -8,6 +8,7 @@ import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { supabase } from '../../lib/supabase';
 import type { Pet } from '../../lib/types';
+import { useI18n } from '../../lib/i18n';
 
 interface PetWithLog extends Pet {
   last_logged?: string | null;
@@ -15,7 +16,7 @@ interface PetWithLog extends Pet {
   date_of_birth?: string;
 }
 
-function PetCard({ pet, onEdit }: { pet: PetWithLog; onEdit: (pet: PetWithLog) => void }) {
+function PetCard({ pet, onEdit, labels }: { pet: PetWithLog; onEdit: (pet: PetWithLog) => void; labels: { edit: string; lastLog: string; noLog: string; speciesLabel: string } }) {
   const speciesEmoji = pet.species === 'dog' ? '🐶' : pet.species === 'cat' ? '🐱' : '🐾';
 
   return (
@@ -25,13 +26,13 @@ function PetCard({ pet, onEdit }: { pet: PetWithLog; onEdit: (pet: PetWithLog) =
         <View style={cardStyles.info}>
           <Text style={cardStyles.name}>{pet.name}</Text>
           <Text style={cardStyles.sub}>
-            {pet.species === 'dog' ? '犬' : pet.species === 'cat' ? '猫' : pet.species}
+            {labels.speciesLabel}
             {pet.breed ? ` • ${pet.breed}` : ''}
           </Text>
           {pet.last_logged ? (
-            <Text style={cardStyles.lastLog}>最終記録: {pet.last_logged}</Text>
+            <Text style={cardStyles.lastLog}>{labels.lastLog}: {pet.last_logged}</Text>
           ) : (
-            <Text style={cardStyles.noLog}>まだ記録がありません</Text>
+            <Text style={cardStyles.noLog}>{labels.noLog}</Text>
           )}
         </View>
       </View>
@@ -42,8 +43,10 @@ function PetCard({ pet, onEdit }: { pet: PetWithLog; onEdit: (pet: PetWithLog) =
           onEdit(pet);
         }}
         activeOpacity={0.7}
+        accessibilityLabel={`Edit ${pet.name}`}
+        accessibilityRole="button"
       >
-        <Text style={cardStyles.editBtnText}>編集</Text>
+        <Text style={cardStyles.editBtnText}>{labels.edit}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -81,6 +84,7 @@ const cardStyles = StyleSheet.create({
 });
 
 export default function PetsScreen() {
+  const { t } = useI18n();
   const [pets, setPets] = useState<PetWithLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -132,9 +136,9 @@ export default function PetsScreen() {
 
   function handleEdit(pet: PetWithLog) {
     Alert.alert(
-      `${pet.name}を編集`,
-      '編集機能は近日公開予定です。',
-      [{ text: 'OK' }]
+      pet.name,
+      t.pets.editComingSoon,
+      [{ text: t.common.ok }]
     );
   }
 
@@ -154,13 +158,15 @@ export default function PetsScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.headerRow}>
-        <Text style={styles.pageTitle}>ペット管理</Text>
+        <Text style={styles.pageTitle}>{t.pets.title}</Text>
         <TouchableOpacity
           style={styles.addBtn}
           onPress={handleAddPet}
           activeOpacity={0.8}
+          accessibilityLabel="Add pet / ペットを追加"
+          accessibilityRole="button"
         >
-          <Text style={styles.addBtnText}>+ 追加</Text>
+          <Text style={styles.addBtnText}>{t.pets.add}</Text>
         </TouchableOpacity>
       </View>
 
@@ -174,19 +180,28 @@ export default function PetsScreen() {
         {pets.length === 0 ? (
           <View style={styles.empty}>
             <Text style={styles.emptyEmoji}>🐾</Text>
-            <Text style={styles.emptyTitle}>ペットを登録しましょう</Text>
-            <Text style={styles.emptyText}>ペットの健康状態を管理するには、まずペットを追加してください。</Text>
-            <TouchableOpacity style={styles.emptyAddBtn} onPress={handleAddPet} activeOpacity={0.8}>
-              <Text style={styles.emptyAddBtnText}>+ ペットを追加する</Text>
+            <Text style={styles.emptyTitle}>{t.pets.noPetsTitle}</Text>
+            <Text style={styles.emptyText}>{t.pets.noPetsText}</Text>
+            <TouchableOpacity style={styles.emptyAddBtn} onPress={handleAddPet} activeOpacity={0.8} accessibilityLabel="Add your first pet / ペットを追加する" accessibilityRole="button">
+              <Text style={styles.emptyAddBtnText}>{t.pets.addMore}</Text>
             </TouchableOpacity>
           </View>
         ) : (
           <>
-            {pets.map((pet) => (
-              <PetCard key={pet.id} pet={pet} onEdit={handleEdit} />
-            ))}
-            <TouchableOpacity style={styles.addMoreBtn} onPress={handleAddPet} activeOpacity={0.8}>
-              <Text style={styles.addMoreText}>+ ペットを追加する</Text>
+            {pets.map((pet) => {
+              const speciesKey = `species_${pet.species}` as keyof typeof t.pets;
+              const speciesLabel = String(t.pets[speciesKey] ?? pet.species);
+              return (
+                <PetCard
+                  key={pet.id}
+                  pet={pet}
+                  onEdit={handleEdit}
+                  labels={{ edit: t.pets.edit, lastLog: t.pets.lastLog, noLog: t.pets.noLog, speciesLabel }}
+                />
+              );
+            })}
+            <TouchableOpacity style={styles.addMoreBtn} onPress={handleAddPet} activeOpacity={0.8} accessibilityLabel="Add another pet / ペットを追加する" accessibilityRole="button">
+              <Text style={styles.addMoreText}>{t.pets.addMore}</Text>
             </TouchableOpacity>
           </>
         )}
