@@ -9,6 +9,7 @@ import { router } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { type MetricKey } from '../../lib/types';
 import { useI18n } from '../../lib/i18n';
+import { useTheme } from '../../lib/theme';
 
 const METRIC_KEYS: MetricKey[] = ['activity_level', 'appetite', 'stool_quality', 'coat_condition', 'eye_clarity', 'energy_level'];
 const METRICS = METRIC_KEYS;
@@ -18,6 +19,7 @@ type Values = Record<MetricKey, number>;
 
 export default function LogScreen() {
   const { t } = useI18n();
+  const { colors } = useTheme();
   const [petId, setPetId] = useState<string | null>(null);
   const [petName, setPetName] = useState('');
   const [values, setValues] = useState<Values>({
@@ -73,27 +75,27 @@ export default function LogScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top']}>
       <ScrollView style={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
-          <Text style={styles.title}>{petName ? `${petName} ${t.log.subtitle}` : t.log.title}</Text>
-          <Text style={styles.subtitle}>{t.log.each}</Text>
+          <Text style={[styles.title, { color: colors.text }]}>{petName ? `${petName} ${t.log.subtitle}` : t.log.title}</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{t.log.each}</Text>
         </View>
 
         {todayLogged && (
-          <View style={styles.alreadyLogged}>
-            <Text style={styles.alreadyLoggedText}>✅ {t.log.alreadyLogged}</Text>
+          <View style={[styles.alreadyLogged, { backgroundColor: colors.primaryLight, borderColor: colors.accent }]}>
+            <Text style={[styles.alreadyLoggedText, { color: colors.primaryDark }]}>✅ {t.log.alreadyLogged}</Text>
           </View>
         )}
 
         {METRICS.map((metric) => (
-          <View key={metric} style={styles.card}>
-            <Text style={styles.metricLabel}>{t.metrics[metric]}</Text>
+          <View key={metric} style={[styles.card, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.metricLabel, { color: colors.text }]}>{t.metrics[metric]}</Text>
             <View style={styles.ratingRow}>
               {[1, 2, 3, 4, 5].map((v) => (
                 <TouchableOpacity
                   key={v}
-                  style={[styles.ratingBtn, values[metric] === v && styles.ratingBtnActive]}
+                  style={[styles.ratingBtn, { borderColor: colors.border, backgroundColor: colors.inputBg }, values[metric] === v && styles.ratingBtnActive]}
                   onPress={() => setMetric(metric, v)}
                   activeOpacity={0.7}
                   accessibilityLabel={`${t.metrics[metric]} ${v} / 5`}
@@ -101,7 +103,7 @@ export default function LogScreen() {
                   accessibilityState={{ selected: values[metric] === v }}
                 >
                   <Text style={styles.ratingEmoji}>{SCORE_EMOJI[v]}</Text>
-                  <Text style={[styles.ratingNum, values[metric] === v && styles.ratingNumActive]}>{v}</Text>
+                  <Text style={[styles.ratingNum, { color: colors.textSecondary }, values[metric] === v && styles.ratingNumActive]}>{v}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -109,19 +111,19 @@ export default function LogScreen() {
         ))}
 
         {/* Notes */}
-        <View style={styles.card}>
-          <Text style={styles.metricLabel}>{t.log.notes}</Text>
+        <View style={[styles.card, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.metricLabel, { color: colors.text }]}>{t.log.notes}</Text>
           <TextInput
-            style={styles.textarea}
+            style={[styles.textarea, { color: colors.text, borderColor: colors.border, backgroundColor: colors.inputBg }]}
             value={notes}
             onChangeText={setNotes}
             placeholder={t.log.notesPlaceholder}
-            placeholderTextColor="#a1a1aa"
+            placeholderTextColor={colors.textMuted}
             multiline
             numberOfLines={3}
             maxLength={500}
           />
-          <Text style={styles.charCount}>{notes.length}/500</Text>
+          <Text style={[styles.charCount, { color: colors.textMuted }]}>{notes.length}/500</Text>
         </View>
 
         <TouchableOpacity

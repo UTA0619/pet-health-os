@@ -27,13 +27,17 @@ export class ErrorBoundary extends React.Component<Props, State> {
         <SafeAreaView style={styles.safe}>
           <View style={styles.container}>
             <Text style={styles.emoji}>😿</Text>
-            <Text style={styles.title}>エラーが発生しました</Text>
-            <Text style={styles.message}>{this.state.error?.message ?? '予期しないエラーが発生しました'}</Text>
+            <Text style={styles.title}>Something went wrong{'\n'}エラーが発生しました</Text>
+            <Text style={styles.message}>
+              {this.state.error?.message ?? 'An unexpected error occurred / 予期しないエラーが発生しました'}
+            </Text>
             <TouchableOpacity
               style={styles.btn}
               onPress={() => this.setState({ hasError: false, error: undefined })}
+              accessibilityLabel="Retry / 再試行する"
+              accessibilityRole="button"
             >
-              <Text style={styles.btnText}>再試行する</Text>
+              <Text style={styles.btnText}>Retry / 再試行する</Text>
             </TouchableOpacity>
           </View>
         </SafeAreaView>

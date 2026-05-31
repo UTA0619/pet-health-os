@@ -97,6 +97,10 @@ const ja = {
     analysisError: '分析に失敗しました',
     tryAgain: '再試行',
     error: 'エラー',
+    coat: '被毛',
+    eyes: '目',
+    posture: '姿勢',
+    mobility: '動き',
   },
   // Settings
   settings: {
@@ -311,6 +315,10 @@ const en: typeof ja = {
     analysisError: 'Analysis failed',
     tryAgain: 'Try again',
     error: 'Error',
+    coat: 'Coat',
+    eyes: 'Eyes',
+    posture: 'Posture',
+    mobility: 'Mobility',
   },
   settings: {
     title: 'Settings',

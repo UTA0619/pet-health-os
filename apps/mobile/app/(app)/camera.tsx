@@ -5,6 +5,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../../lib/supabase';
 import { useI18n } from '../../lib/i18n';
+import { useTheme } from '../../lib/theme';
 
 type AnalysisResult = {
   coat_condition: string; eye_clarity: string; posture: string;
@@ -14,6 +15,7 @@ type AnalysisResult = {
 
 export default function CameraScreen() {
   const { t, locale } = useI18n();
+  const { colors } = useTheme();
   const [permission, requestPermission] = useCameraPermissions();
   const [petId, setPetId] = useState<string | null>(null);
   const [petName, setPetName] = useState('');
@@ -87,21 +89,21 @@ export default function CameraScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top']}>
       <ScrollView style={styles.scroll}>
         <View style={styles.header}>
-          <Text style={styles.title}>{t.camera.title}</Text>
-          <Text style={styles.subtitle}>{petName || t.camera.noPet}</Text>
+          <Text style={[styles.title, { color: colors.text }]}>{t.camera.title}</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{petName || t.camera.noPet}</Text>
         </View>
 
         {!photo ? (
-          <View style={styles.uploadArea}>
+          <View style={[styles.uploadArea, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Text style={styles.uploadEmoji}>📷</Text>
-            <Text style={styles.uploadTitle}>{t.camera.takePhoto} / {t.camera.fromLibrary}</Text>
-            <Text style={styles.uploadHint}>JPG, PNG</Text>
+            <Text style={[styles.uploadTitle, { color: colors.text }]}>{t.camera.takePhoto} / {t.camera.fromLibrary}</Text>
+            <Text style={[styles.uploadHint, { color: colors.textMuted }]}>JPG, PNG</Text>
             <View style={styles.uploadButtons}>
-              <TouchableOpacity style={styles.uploadBtn} onPress={pickFromLibrary} activeOpacity={0.8} accessibilityLabel="Choose from library / ライブラリから選択" accessibilityRole="button">
-                <Text style={styles.uploadBtnText}>📁 {t.camera.fromLibrary}</Text>
+              <TouchableOpacity style={[styles.uploadBtn, { borderColor: colors.border, backgroundColor: colors.inputBg }]} onPress={pickFromLibrary} activeOpacity={0.8} accessibilityLabel="Choose from library / ライブラリから選択" accessibilityRole="button">
+                <Text style={[styles.uploadBtnText, { color: colors.text }]}>📁 {t.camera.fromLibrary}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.uploadBtn, styles.uploadBtnPrimary]}
@@ -122,7 +124,7 @@ export default function CameraScreen() {
             <Image source={{ uri: photo }} style={styles.preview} />
             {!result && (
               <View style={styles.previewActions}>
-                <TouchableOpacity style={styles.retakeBtn} onPress={() => { setPhoto(null); setResult(null); }} accessibilityLabel="Retake photo / 撮り直す" accessibilityRole="button">
+                <TouchableOpacity style={[styles.retakeBtn, { borderColor: colors.border, backgroundColor: colors.surface }]} onPress={() => { setPhoto(null); setResult(null); }} accessibilityLabel="Retake photo / 撮り直す" accessibilityRole="button">
                   <Text style={styles.retakeBtnText}>{t.camera.retake}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -140,34 +142,34 @@ export default function CameraScreen() {
         )}
 
         {result && (
-          <View style={[styles.resultCard, result.requires_vet_attention && styles.resultCardWarning]}>
+          <View style={[styles.resultCard, { backgroundColor: colors.surface }, result.requires_vet_attention && styles.resultCardWarning]}>
             <View style={styles.resultHeader}>
               <Text style={styles.resultHeaderEmoji}>{result.requires_vet_attention ? '⚠️' : '✅'}</Text>
               <View>
-                <Text style={styles.resultTitle}>{result.requires_vet_attention ? t.camera.vetAttention : t.camera.result}</Text>
-                <Text style={styles.resultConfidence}>{t.camera.confidence}: {Math.round(result.confidence * 100)}%</Text>
+                <Text style={[styles.resultTitle, { color: colors.text }]}>{result.requires_vet_attention ? t.camera.vetAttention : t.camera.result}</Text>
+                <Text style={[styles.resultConfidence, { color: colors.textSecondary }]}>{t.camera.confidence}: {Math.round(result.confidence * 100)}%</Text>
               </View>
             </View>
 
             <View style={styles.resultGrid}>
-              {[['被毛', result.coat_condition], ['目', result.eye_clarity], ['姿勢', result.posture], ['動き', result.mobility]].map(([label, value]) => (
-                <View key={label} style={styles.resultItem}>
-                  <Text style={styles.resultItemLabel}>{label}</Text>
-                  <Text style={styles.resultItemValue}>{value}</Text>
+              {([[t.camera.coat, result.coat_condition], [t.camera.eyes, result.eye_clarity], [t.camera.posture, result.posture], [t.camera.mobility, result.mobility]] as [string, string][]).map(([label, value]) => (
+                <View key={label} style={[styles.resultItem, { backgroundColor: colors.background }]}>
+                  <Text style={[styles.resultItemLabel, { color: colors.textSecondary }]}>{label}</Text>
+                  <Text style={[styles.resultItemValue, { color: colors.text }]}>{value}</Text>
                 </View>
               ))}
             </View>
 
             {result.recommendations.length > 0 && (
               <View style={styles.recommendations}>
-                <Text style={styles.recommendationsTitle}>{t.camera.recommendations}</Text>
+                <Text style={[styles.recommendationsTitle, { color: colors.text }]}>{t.camera.recommendations}</Text>
                 {result.recommendations.map((r, i) => (
                   <Text key={i} style={styles.recommendationItem}>• {r}</Text>
                 ))}
               </View>
             )}
 
-            <TouchableOpacity style={styles.retakeBtn} onPress={() => { setPhoto(null); setResult(null); }} accessibilityLabel="Retake photo / 撮り直す" accessibilityRole="button">
+            <TouchableOpacity style={[styles.retakeBtn, { borderColor: colors.border, backgroundColor: colors.surface }]} onPress={() => { setPhoto(null); setResult(null); }} accessibilityLabel="Retake photo / 撮り直す" accessibilityRole="button">
               <Text style={styles.retakeBtnText}>{t.camera.retake}</Text>
             </TouchableOpacity>
           </View>

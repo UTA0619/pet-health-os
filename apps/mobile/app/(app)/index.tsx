@@ -16,8 +16,16 @@ function ScoreCircle({ score, trend }: { score: number; trend: string }) {
   const { colors } = useTheme();
   const color = score >= 80 ? colors.scoreGreen : score >= 60 ? colors.scoreYellow : colors.scoreRed;
   const trendEmoji = trend === 'improving' ? '↑' : trend === 'declining' ? '↓' : '→';
+  const trendLabel = trend === 'improving' ? 'improving / 上昇中' : trend === 'declining' ? 'declining / 下降中' : 'stable / 安定';
   return (
-    <View style={[scoreStyles.circle, { borderColor: color, backgroundColor: colors.surface }]}>
+    <View
+      style={[scoreStyles.circle, { borderColor: color, backgroundColor: colors.surface }]}
+      accessible={true}
+      accessibilityRole="progressbar"
+      accessibilityLabel={`Health score ${score} out of 100 / 健康スコア ${score}点`}
+      accessibilityValue={{ min: 0, max: 100, now: score }}
+      accessibilityHint={`Trend: ${trendLabel}`}
+    >
       <Text style={[scoreStyles.number, { color }]}>{score}</Text>
       <Text style={[scoreStyles.label, { color: colors.textSecondary }]}>/ 100</Text>
       <Text style={scoreStyles.trend}>{trendEmoji}</Text>

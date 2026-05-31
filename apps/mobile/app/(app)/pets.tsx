@@ -9,35 +9,38 @@ import * as Haptics from 'expo-haptics';
 import { supabase } from '../../lib/supabase';
 import type { Pet } from '../../lib/types';
 import { useI18n } from '../../lib/i18n';
+import { useTheme } from '../../lib/theme';
+import type { AppColors } from '../../lib/theme';
 
 interface PetWithLog extends Pet {
   last_logged?: string | null;
   breed?: string;
   date_of_birth?: string;
+  weight_kg?: number | null;
 }
 
-function PetCard({ pet, onEdit, labels }: { pet: PetWithLog; onEdit: (pet: PetWithLog) => void; labels: { edit: string; lastLog: string; noLog: string; speciesLabel: string } }) {
+function PetCard({ pet, onEdit, labels, colors }: { pet: PetWithLog; onEdit: (pet: PetWithLog) => void; labels: { edit: string; lastLog: string; noLog: string; speciesLabel: string }; colors: AppColors }) {
   const speciesEmoji = pet.species === 'dog' ? '🐶' : pet.species === 'cat' ? '🐱' : '🐾';
 
   return (
-    <View style={cardStyles.card}>
+    <View style={[cardStyles.card, { backgroundColor: colors.surface }]}>
       <View style={cardStyles.left}>
         <Text style={cardStyles.emoji}>{speciesEmoji}</Text>
         <View style={cardStyles.info}>
-          <Text style={cardStyles.name}>{pet.name}</Text>
-          <Text style={cardStyles.sub}>
+          <Text style={[cardStyles.name, { color: colors.text }]}>{pet.name}</Text>
+          <Text style={[cardStyles.sub, { color: colors.textSecondary }]}>
             {labels.speciesLabel}
             {pet.breed ? ` • ${pet.breed}` : ''}
           </Text>
           {pet.last_logged ? (
-            <Text style={cardStyles.lastLog}>{labels.lastLog}: {pet.last_logged}</Text>
+            <Text style={[cardStyles.lastLog, { color: colors.primary }]}>{labels.lastLog}: {pet.last_logged}</Text>
           ) : (
-            <Text style={cardStyles.noLog}>{labels.noLog}</Text>
+            <Text style={[cardStyles.noLog, { color: colors.textMuted }]}>{labels.noLog}</Text>
           )}
         </View>
       </View>
       <TouchableOpacity
-        style={cardStyles.editBtn}
+        style={[cardStyles.editBtn, { backgroundColor: colors.background }]}
         onPress={() => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           onEdit(pet);
@@ -46,7 +49,7 @@ function PetCard({ pet, onEdit, labels }: { pet: PetWithLog; onEdit: (pet: PetWi
         accessibilityLabel={`Edit ${pet.name}`}
         accessibilityRole="button"
       >
-        <Text style={cardStyles.editBtnText}>{labels.edit}</Text>
+        <Text style={[cardStyles.editBtnText, { color: colors.textSecondary }]}>{labels.edit}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -57,7 +60,6 @@ const cardStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#fff',
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
@@ -69,22 +71,22 @@ const cardStyles = StyleSheet.create({
   left: { flexDirection: 'row', alignItems: 'center', flex: 1 },
   emoji: { fontSize: 36, marginRight: 12 },
   info: { flex: 1 },
-  name: { fontSize: 17, fontWeight: '700', color: '#18181b' },
-  sub: { fontSize: 13, color: '#71717a', marginTop: 2 },
-  lastLog: { fontSize: 12, color: '#10b981', marginTop: 4 },
-  noLog: { fontSize: 12, color: '#d4d4d8', marginTop: 4 },
+  name: { fontSize: 17, fontWeight: '700' },
+  sub: { fontSize: 13, marginTop: 2 },
+  lastLog: { fontSize: 12, marginTop: 4 },
+  noLog: { fontSize: 12, marginTop: 4 },
   editBtn: {
-    backgroundColor: '#f4f4f5',
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 10,
     marginLeft: 8,
   },
-  editBtnText: { fontSize: 14, fontWeight: '600', color: '#3f3f46' },
+  editBtnText: { fontSize: 14, fontWeight: '600' },
 });
 
 export default function PetsScreen() {
   const { t } = useI18n();
+  const { colors } = useTheme();
   const [pets, setPets] = useState<PetWithLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -135,11 +137,15 @@ export default function PetsScreen() {
   }, [load]);
 
   function handleEdit(pet: PetWithLog) {
-    Alert.alert(
-      pet.name,
-      t.pets.editComingSoon,
-      [{ text: t.common.ok }]
-    );
+    const speciesKey = `species_${pet.species}` as keyof typeof t.pets;
+    const speciesLabel = String(t.pets[speciesKey] ?? pet.species);
+    const details = [
+      speciesLabel,
+      pet.breed || null,
+      pet.weight_kg ? `${pet.weight_kg} kg` : null,
+      pet.last_logged ? `${t.pets.lastLog}: ${pet.last_logged}` : t.pets.noLog,
+    ].filter(Boolean).join('\n');
+    Alert.alert(pet.name, details, [{ text: t.common.ok }]);
   }
 
   function handleAddPet() {
@@ -149,18 +155,18 @@ export default function PetsScreen() {
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#10b981" />
+      <View style={[styles.center, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top']}>
       <View style={styles.headerRow}>
-        <Text style={styles.pageTitle}>{t.pets.title}</Text>
+        <Text style={[styles.pageTitle, { color: colors.text }]}>{t.pets.title}</Text>
         <TouchableOpacity
-          style={styles.addBtn}
+          style={[styles.addBtn, { backgroundColor: colors.primary }]}
           onPress={handleAddPet}
           activeOpacity={0.8}
           accessibilityLabel="Add pet / ペットを追加"
@@ -174,15 +180,15 @@ export default function PetsScreen() {
         style={styles.scroll}
         contentContainerStyle={styles.content}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#10b981" />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
         }
       >
         {pets.length === 0 ? (
           <View style={styles.empty}>
             <Text style={styles.emptyEmoji}>🐾</Text>
-            <Text style={styles.emptyTitle}>{t.pets.noPetsTitle}</Text>
-            <Text style={styles.emptyText}>{t.pets.noPetsText}</Text>
-            <TouchableOpacity style={styles.emptyAddBtn} onPress={handleAddPet} activeOpacity={0.8} accessibilityLabel="Add your first pet / ペットを追加する" accessibilityRole="button">
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>{t.pets.noPetsTitle}</Text>
+            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>{t.pets.noPetsText}</Text>
+            <TouchableOpacity style={[styles.emptyAddBtn, { backgroundColor: colors.primary }]} onPress={handleAddPet} activeOpacity={0.8} accessibilityLabel="Add your first pet / ペットを追加する" accessibilityRole="button">
               <Text style={styles.emptyAddBtnText}>{t.pets.addMore}</Text>
             </TouchableOpacity>
           </View>
@@ -197,11 +203,12 @@ export default function PetsScreen() {
                   pet={pet}
                   onEdit={handleEdit}
                   labels={{ edit: t.pets.edit, lastLog: t.pets.lastLog, noLog: t.pets.noLog, speciesLabel }}
+                  colors={colors}
                 />
               );
             })}
-            <TouchableOpacity style={styles.addMoreBtn} onPress={handleAddPet} activeOpacity={0.8} accessibilityLabel="Add another pet / ペットを追加する" accessibilityRole="button">
-              <Text style={styles.addMoreText}>{t.pets.addMore}</Text>
+            <TouchableOpacity style={[styles.addMoreBtn, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={handleAddPet} activeOpacity={0.8} accessibilityLabel="Add another pet / ペットを追加する" accessibilityRole="button">
+              <Text style={[styles.addMoreText, { color: colors.textSecondary }]}>{t.pets.addMore}</Text>
             </TouchableOpacity>
           </>
         )}
@@ -212,7 +219,7 @@ export default function PetsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#f4f4f5' },
+  safe: { flex: 1 },
   scroll: { flex: 1 },
   content: { padding: 16 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
@@ -224,9 +231,8 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingBottom: 8,
   },
-  pageTitle: { fontSize: 24, fontWeight: '800', color: '#18181b' },
+  pageTitle: { fontSize: 24, fontWeight: '800' },
   addBtn: {
-    backgroundColor: '#10b981',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 10,
@@ -238,10 +244,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   emptyEmoji: { fontSize: 56, marginBottom: 16 },
-  emptyTitle: { fontSize: 20, fontWeight: '700', color: '#18181b', marginBottom: 8 },
-  emptyText: { fontSize: 14, color: '#71717a', textAlign: 'center', lineHeight: 20, marginBottom: 24 },
+  emptyTitle: { fontSize: 20, fontWeight: '700', marginBottom: 8 },
+  emptyText: { fontSize: 14, textAlign: 'center', lineHeight: 20, marginBottom: 24 },
   emptyAddBtn: {
-    backgroundColor: '#10b981',
     paddingHorizontal: 24,
     paddingVertical: 14,
     borderRadius: 12,
@@ -252,10 +257,8 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: '#d4d4d8',
     borderStyle: 'dashed',
     alignItems: 'center',
-    backgroundColor: '#fff',
   },
-  addMoreText: { fontSize: 15, fontWeight: '600', color: '#71717a' },
+  addMoreText: { fontSize: 15, fontWeight: '600' },
 });

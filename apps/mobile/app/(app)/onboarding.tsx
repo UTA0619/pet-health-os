@@ -9,6 +9,7 @@ import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { useI18n } from '../../lib/i18n';
+import { useTheme } from '../../lib/theme';
 
 const SPECIES_VALUES = ['dog', 'cat', 'rabbit', 'bird', 'other'] as const;
 type Species = typeof SPECIES_VALUES[number];
@@ -17,6 +18,7 @@ type Step = 'welcome' | 'pet-info' | 'done';
 
 export default function OnboardingScreen() {
   const { t } = useI18n();
+  const { colors } = useTheme();
   const [step, setStep] = useState<Step>('welcome');
 
   // Pet form state
@@ -61,11 +63,11 @@ export default function OnboardingScreen() {
   // ── Step: Welcome ────────────────────────────────────────────
   if (step === 'welcome') {
     return (
-      <SafeAreaView style={styles.safe}>
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
         <View style={styles.welcomeContainer}>
           <Text style={styles.heroEmoji}>🐾</Text>
-          <Text style={styles.heroTitle}>{t.onboarding.heroTitle}</Text>
-          <Text style={styles.heroSubtitle}>{t.onboarding.heroSubtitle}</Text>
+          <Text style={[styles.heroTitle, { color: colors.text }]}>{t.onboarding.heroTitle}</Text>
+          <Text style={[styles.heroSubtitle, { color: colors.textSecondary }]}>{t.onboarding.heroSubtitle}</Text>
 
           <View style={styles.featureList}>
             {[
@@ -74,15 +76,15 @@ export default function OnboardingScreen() {
               { emoji: '📷', text: t.onboarding.feature3 },
               { emoji: '📈', text: t.onboarding.feature4 },
             ].map((f) => (
-              <View key={f.emoji} style={styles.featureRow}>
+              <View key={f.emoji} style={[styles.featureRow, { backgroundColor: colors.surface }]}>
                 <Text style={styles.featureEmoji}>{f.emoji}</Text>
-                <Text style={styles.featureText}>{f.text}</Text>
+                <Text style={[styles.featureText, { color: colors.textSecondary }]}>{f.text}</Text>
               </View>
             ))}
           </View>
 
           <TouchableOpacity
-            style={styles.primaryBtn}
+            style={[styles.primaryBtn, { backgroundColor: colors.primary }]}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               setStep('pet-info');
@@ -101,7 +103,7 @@ export default function OnboardingScreen() {
   // ── Step: Pet Info ───────────────────────────────────────────
   if (step === 'pet-info') {
     return (
-      <SafeAreaView style={styles.safe}>
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
         <KeyboardAvoidingView
           style={{ flex: 1 }}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -118,20 +120,20 @@ export default function OnboardingScreen() {
               <View style={styles.progressDot} />
             </View>
 
-            <Text style={styles.formTitle}>{t.onboarding.petInfo}</Text>
-            <Text style={styles.formSubtitle}>{t.onboarding.petInfoSub}</Text>
+            <Text style={[styles.formTitle, { color: colors.text }]}>{t.onboarding.petInfo}</Text>
+            <Text style={[styles.formSubtitle, { color: colors.textSecondary }]}>{t.onboarding.petInfoSub}</Text>
 
             {/* Name */}
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>
                 {t.onboarding.name} <Text style={styles.required}>{t.onboarding.nameRequired}</Text>
               </Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: colors.inputBg, color: colors.text, borderColor: colors.border }]}
                 value={name}
                 onChangeText={setName}
                 placeholder={t.onboarding.namePlaceholder}
-                placeholderTextColor="#a1a1aa"
+                placeholderTextColor={colors.textMuted}
                 returnKeyType="next"
                 maxLength={50}
               />
@@ -139,7 +141,7 @@ export default function OnboardingScreen() {
 
             {/* Species */}
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>{t.onboarding.species}</Text>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>{t.onboarding.species}</Text>
               <View style={styles.speciesGrid}>
                 {SPECIES_VALUES.map((val) => {
                   const labelKey = `species_${val}` as keyof typeof t.onboarding;
@@ -148,7 +150,8 @@ export default function OnboardingScreen() {
                       key={val}
                       style={[
                         styles.speciesBtn,
-                        species === val && styles.speciesBtnActive,
+                        { backgroundColor: colors.inputBg, borderColor: colors.border },
+                        species === val && { borderColor: colors.primary, backgroundColor: colors.primaryLight },
                       ]}
                       onPress={() => {
                         Haptics.selectionAsync();
@@ -159,7 +162,7 @@ export default function OnboardingScreen() {
                       accessibilityRole="radio"
                       accessibilityState={{ selected: species === val }}
                     >
-                      <Text style={styles.speciesBtnText}>{String(t.onboarding[labelKey])}</Text>
+                      <Text style={[styles.speciesBtnText, { color: colors.text }]}>{String(t.onboarding[labelKey])}</Text>
                     </TouchableOpacity>
                   );
                 })}
@@ -168,13 +171,13 @@ export default function OnboardingScreen() {
 
             {/* Breed */}
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>{t.onboarding.breed}</Text>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>{t.onboarding.breed}</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: colors.inputBg, color: colors.text, borderColor: colors.border }]}
                 value={breed}
                 onChangeText={setBreed}
                 placeholder={t.onboarding.breedPlaceholder}
-                placeholderTextColor="#a1a1aa"
+                placeholderTextColor={colors.textMuted}
                 returnKeyType="next"
                 maxLength={100}
               />
@@ -182,13 +185,13 @@ export default function OnboardingScreen() {
 
             {/* Weight */}
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>{t.onboarding.weight}</Text>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>{t.onboarding.weight}</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: colors.inputBg, color: colors.text, borderColor: colors.border }]}
                 value={weightKg}
                 onChangeText={setWeightKg}
                 placeholder={t.onboarding.weightPlaceholder}
-                placeholderTextColor="#a1a1aa"
+                placeholderTextColor={colors.textMuted}
                 keyboardType="decimal-pad"
                 returnKeyType="done"
                 maxLength={6}
@@ -196,7 +199,7 @@ export default function OnboardingScreen() {
             </View>
 
             <TouchableOpacity
-              style={[styles.primaryBtn, loading && styles.primaryBtnDisabled]}
+              style={[styles.primaryBtn, { backgroundColor: colors.primary }, loading && styles.primaryBtnDisabled]}
               onPress={handleCreatePet}
               disabled={loading}
               activeOpacity={0.85}
@@ -220,17 +223,17 @@ export default function OnboardingScreen() {
 
   // ── Step: Done ───────────────────────────────────────────────
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <View style={styles.doneContainer}>
         <Text style={styles.doneEmoji}>🎉</Text>
-        <Text style={styles.doneTitle}>{t.onboarding.doneTitle}</Text>
-        <Text style={styles.doneSubtitle}>
+        <Text style={[styles.doneTitle, { color: colors.text }]}>{t.onboarding.doneTitle}</Text>
+        <Text style={[styles.doneSubtitle, { color: colors.textSecondary }]}>
           <Text style={styles.donePetName}>{name}</Text>
           {t.onboarding.doneSub}
         </Text>
 
         <TouchableOpacity
-          style={styles.primaryBtn}
+          style={[styles.primaryBtn, { backgroundColor: colors.primary }]}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             router.replace('/(app)' as never);
@@ -247,7 +250,7 @@ export default function OnboardingScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#f4f4f5' },
+  safe: { flex: 1 },
 
   // Welcome
   welcomeContainer: {
@@ -256,21 +259,20 @@ const styles = StyleSheet.create({
   },
   heroEmoji: { fontSize: 72, marginBottom: 16 },
   heroTitle: {
-    fontSize: 28, fontWeight: '800', color: '#18181b',
+    fontSize: 28, fontWeight: '800',
     textAlign: 'center', lineHeight: 36, marginBottom: 12,
   },
   heroSubtitle: {
-    fontSize: 14, color: '#71717a', textAlign: 'center',
+    fontSize: 14, textAlign: 'center',
     lineHeight: 22, marginBottom: 28,
   },
   featureList: { width: '100%', marginBottom: 36 },
   featureRow: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#fff', borderRadius: 12,
-    padding: 14, marginBottom: 8,
+    borderRadius: 12, padding: 14, marginBottom: 8,
   },
   featureEmoji: { fontSize: 22, marginRight: 12 },
-  featureText: { fontSize: 14, color: '#374151', fontWeight: '500', flex: 1 },
+  featureText: { fontSize: 14, fontWeight: '500', flex: 1 },
 
   // Form
   formContainer: { padding: 24, paddingTop: 16 },
@@ -285,38 +287,32 @@ const styles = StyleSheet.create({
   progressDotActive: { backgroundColor: '#10b981' },
   progressLine: { flex: 0, width: 40, height: 2, backgroundColor: '#d1d5db', marginHorizontal: 8 },
   formTitle: {
-    fontSize: 22, fontWeight: '800', color: '#18181b',
+    fontSize: 22, fontWeight: '800',
     marginBottom: 4,
   },
-  formSubtitle: { fontSize: 13, color: '#71717a', marginBottom: 24 },
+  formSubtitle: { fontSize: 13, marginBottom: 24 },
   fieldGroup: { marginBottom: 20 },
-  label: { fontSize: 13, fontWeight: '600', color: '#3f3f46', marginBottom: 8 },
+  label: { fontSize: 13, fontWeight: '600', marginBottom: 8 },
   required: { color: '#ef4444' },
   input: {
-    backgroundColor: '#fff', borderRadius: 12, padding: 14,
-    fontSize: 15, color: '#18181b',
-    borderWidth: 1, borderColor: '#e4e4e7',
+    borderRadius: 12, padding: 14,
+    fontSize: 15, borderWidth: 1,
   },
   speciesGrid: {
     flexDirection: 'row', flexWrap: 'wrap', gap: 8,
   },
   speciesBtn: {
     paddingHorizontal: 14, paddingVertical: 10,
-    backgroundColor: '#fff', borderRadius: 10,
-    borderWidth: 1.5, borderColor: '#e4e4e7',
+    borderRadius: 10, borderWidth: 1.5,
   },
-  speciesBtnActive: {
-    borderColor: '#10b981', backgroundColor: '#ecfdf5',
-  },
-  speciesBtnText: { fontSize: 14, color: '#374151' },
+  speciesBtnText: { fontSize: 14 },
 
   // Shared
   primaryBtn: {
-    backgroundColor: '#10b981', borderRadius: 14,
-    padding: 16, alignItems: 'center',
+    borderRadius: 14, padding: 16, alignItems: 'center',
     marginTop: 8,
   },
-  primaryBtnDisabled: { backgroundColor: '#6ee7b7' },
+  primaryBtnDisabled: { opacity: 0.6 },
   primaryBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 
   // Done
@@ -326,11 +322,11 @@ const styles = StyleSheet.create({
   },
   doneEmoji: { fontSize: 72, marginBottom: 16 },
   doneTitle: {
-    fontSize: 28, fontWeight: '800', color: '#18181b',
+    fontSize: 28, fontWeight: '800',
     marginBottom: 12,
   },
   doneSubtitle: {
-    fontSize: 15, color: '#71717a', textAlign: 'center',
+    fontSize: 15, textAlign: 'center',
     lineHeight: 24, marginBottom: 40,
   },
   donePetName: { color: '#10b981', fontWeight: '700' },

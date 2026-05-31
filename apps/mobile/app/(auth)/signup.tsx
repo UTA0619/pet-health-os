@@ -6,6 +6,7 @@ import {
 import { Link, router } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { useI18n } from '../../lib/i18n';
+import { useTheme } from '../../lib/theme';
 
 export default function SignupScreen() {
   const [email, setEmail] = useState('');
@@ -14,6 +15,7 @@ export default function SignupScreen() {
   const [termsAgreed, setTermsAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
   const { t } = useI18n();
+  const { colors } = useTheme();
 
   async function handleSignup() {
     if (!email || !password) {
@@ -49,22 +51,22 @@ export default function SignupScreen() {
   }
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+    <KeyboardAvoidingView style={[styles.container, { backgroundColor: colors.surface }]} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
           <Text style={styles.logo}>🐾</Text>
-          <Text style={styles.title}>{t.signup.title}</Text>
-          <Text style={styles.subtitle}>Pet Health OS</Text>
+          <Text style={[styles.title, { color: colors.text }]}>{t.signup.title}</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Pet Health OS</Text>
         </View>
 
         <View style={styles.form}>
           <Text style={styles.label}>{t.signup.email}</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.inputBg }]}
             value={email}
             onChangeText={setEmail}
             placeholder="your@email.com"
-            placeholderTextColor="#a1a1aa"
+            placeholderTextColor={colors.textMuted}
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
@@ -74,11 +76,11 @@ export default function SignupScreen() {
 
           <Text style={styles.label}>{t.signup.password}</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.inputBg }]}
             value={password}
             onChangeText={setPassword}
             placeholder="••••••••"
-            placeholderTextColor="#a1a1aa"
+            placeholderTextColor={colors.textMuted}
             secureTextEntry
             accessibilityLabel="Password / パスワード"
             accessibilityHint="Enter a password with at least 8 characters"
@@ -86,11 +88,11 @@ export default function SignupScreen() {
 
           <Text style={styles.label}>{t.signup.confirmPassword}</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.inputBg }]}
             value={confirmPassword}
             onChangeText={setConfirmPassword}
             placeholder="••••••••"
-            placeholderTextColor="#a1a1aa"
+            placeholderTextColor={colors.textMuted}
             secureTextEntry
             accessibilityLabel="Confirm password / パスワード確認"
             accessibilityHint="Re-enter your password to confirm"
@@ -106,7 +108,7 @@ export default function SignupScreen() {
             <View style={[styles.checkbox, termsAgreed && styles.checkboxChecked]}>
               {termsAgreed && <Text style={styles.checkmark}>✓</Text>}
             </View>
-            <Text style={styles.termsText}>
+            <Text style={[styles.termsText, { color: colors.textSecondary }]}>
               <Text style={styles.termsLink} onPress={() => router.push('/(app)/terms' as never)}>{t.signup.termsLink}</Text>
               {' '}{t.signup.terms}{' '}
               <Text style={styles.termsLink} onPress={() => router.push('/(app)/privacy' as never)}>{t.signup.privacyLink}</Text>
@@ -126,7 +128,7 @@ export default function SignupScreen() {
           </TouchableOpacity>
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>{t.signup.haveAccount}</Text>
+            <Text style={[styles.footerText, { color: colors.textSecondary }]}>{t.signup.haveAccount}</Text>
             <Link href="/(auth)/login" asChild>
               <TouchableOpacity accessibilityLabel="Log in / ログイン" accessibilityRole="link">
                 <Text style={styles.link}>{t.signup.login}</Text>
